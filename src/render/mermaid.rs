@@ -162,6 +162,15 @@ fn render_branch(
 ) {
     let condition = match branch.kind {
         BranchKind::If => mermaid_condition(&branch.condition_src),
+        BranchKind::Switch => format!(
+            "switch {} case {}",
+            mermaid_condition(&branch.condition_src),
+            branch
+                .arms
+                .first()
+                .map(|arm| arm.label.as_str())
+                .unwrap_or("")
+        ),
         BranchKind::Optional => format!("optional {}", branch.arms[0].label),
     };
 
@@ -170,6 +179,7 @@ fn render_branch(
         if idx > 0 {
             let label = match branch.kind {
                 BranchKind::If => "else".to_string(),
+                BranchKind::Switch => format!("else case {}", arm.label),
                 BranchKind::Optional => format!("else optional {}", arm.label),
             };
             writeln!(out, "    {label}").unwrap();

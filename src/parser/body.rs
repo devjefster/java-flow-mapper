@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use tree_sitter::Node;
 
 use crate::model::{
-    BodyElement, BranchKind, BranchSyntax, CallSite, LambdaKind, LambdaSyntax, LoopKind, LoopLocal,
-    LoopSyntax, ParamInfo, ReceiverKind, TypeRef,
+    BodyElement, BranchArmSyntax, BranchKind, BranchSyntax, CallSite, LambdaKind, LambdaSyntax,
+    LoopKind, LoopLocal, LoopSyntax, ParamInfo, ReceiverKind, TypeRef,
 };
 
 use super::annotations::param_source;
@@ -31,6 +31,11 @@ pub fn collect_body_elements_into(node: Node<'_>, source: &str, elements: &mut V
 
     if node.kind() == "if_statement" {
         elements.push(BodyElement::Branch(parse_if_statement(node, source)));
+        return;
+    }
+
+    if matches!(node.kind(), "switch_statement" | "switch_expression") {
+        elements.push(BodyElement::Branch(parse_switch_statement(node, source)));
         return;
     }
 
@@ -63,6 +68,25 @@ pub fn parse_if_statement(node: Node<'_>, source: &str) -> BranchSyntax {
     let condition = node.child_by_field_name("condition");
     let consequence = node.child_by_field_name("consequence");
     let alternative = node.child_by_field_name("alternative");
+    let then_arm = consequence
+        .map(|consequence| collect_body_elements(consequence, source))
+        .unwrap_or_default();
+    let else_arm = alternative.map(|alternative| collect_body_elements(alternative, source));
+    let then_terminates = consequence.is_some_and(arm_terminates);
+    let else_terminates = alternative.is_some_and(arm_terminates);
+
+    let mut arms = vec![BranchArmSyntax {
+        label: "then".to_string(),
+        body: then_arm.clone(),
+        terminates: then_terminates,
+    }];
+    if let Some(else_arm) = &else_arm {
+        arms.push(BranchArmSyntax {
+            label: "else".to_string(),
+            body: else_arm.clone(),
+            terminates: else_terminates,
+        });
+    }
 
     BranchSyntax {
         kind: BranchKind::If,
@@ -72,12 +96,93 @@ pub fn parse_if_statement(node: Node<'_>, source: &str) -> BranchSyntax {
         condition_calls: condition
             .map(|condition| collect_body_elements(condition, source))
             .unwrap_or_default(),
-        then_arm: consequence
-            .map(|consequence| collect_body_elements(consequence, source))
+        arms,
+        then_arm,
+        else_arm,
+        then_terminates,
+        else_terminates,
+    }
+}
+
+/// Parse a `switch_statement` into a branch syntax node.
+pub fn parse_switch_statement(node: Node<'_>, source: &str) -> BranchSyntax {
+    let condition = node.child_by_field_name("condition");
+
+    BranchSyntax {
+        kind: BranchKind::Switch,
+        condition_src: condition
+            .map(|condition| condition_source(condition, source))
+            .unwrap_or_else(|| header_source(node, source)),
+        condition_calls: condition
+            .map(|condition| collect_body_elements(condition, source))
             .unwrap_or_default(),
-        else_arm: alternative.map(|alternative| collect_body_elements(alternative, source)),
-        then_terminates: consequence.is_some_and(arm_terminates),
-        else_terminates: alternative.is_some_and(arm_terminates),
+        arms: switch_arms(node, source),
+        then_arm: Vec::new(),
+        else_arm: None,
+        then_terminates: false,
+        else_terminates: false,
+    }
+}
+
+fn switch_arms(node: Node<'_>, source: &str) -> Vec<BranchArmSyntax> {
+    let Some(body) = node.child_by_field_name("body") else {
+        return Vec::new();
+    };
+    let mut arms = Vec::new();
+    for child in named_children(body) {
+        match child.kind() {
+            "switch_block_statement_group" | "switch_rule" => {
+                arms.extend(switch_group_arms(child, source));
+            }
+            _ => {}
+        }
+    }
+    arms
+}
+
+fn switch_group_arms(group: Node<'_>, source: &str) -> Vec<BranchArmSyntax> {
+    let children = named_children(group);
+    let labels = children
+        .iter()
+        .filter(|child| child.kind() == "switch_label")
+        .map(|label| switch_label_text(*label, source))
+        .collect::<Vec<_>>();
+    let body = children
+        .iter()
+        .filter(|child| child.kind() != "switch_label")
+        .flat_map(|child| collect_body_elements(*child, source))
+        .collect::<Vec<_>>();
+    let terminates = children
+        .iter()
+        .rev()
+        .find(|child| child.kind() != "switch_label")
+        .is_some_and(|child| arm_terminates(*child));
+
+    labels
+        .into_iter()
+        .map(|label| BranchArmSyntax {
+            label,
+            body: body.clone(),
+            terminates,
+        })
+        .collect()
+}
+
+fn switch_label_text(label: Node<'_>, source: &str) -> String {
+    let value = text(label, source);
+    let trimmed = value
+        .trim()
+        .trim_end_matches(':')
+        .trim_end_matches("->")
+        .trim();
+    if trimmed == "default" {
+        "default".to_string()
+    } else {
+        trimmed
+            .strip_prefix("case")
+            .unwrap_or(trimmed)
+            .trim()
+            .to_string()
     }
 }
 

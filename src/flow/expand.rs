@@ -91,34 +91,23 @@ fn expand_body(
                     stack,
                     caller_depth,
                 ));
-                let mut arms = vec![Arm {
-                    label: "then".to_string(),
-                    terminates: branch.then_terminates,
-                    children: expand_body(
-                        index,
-                        owner,
-                        caller,
-                        &branch.then_arm,
-                        unresolved,
-                        stack,
-                        caller_depth,
-                    ),
-                }];
-                if let Some(else_arm) = &branch.else_arm {
-                    arms.push(Arm {
-                        label: "else".to_string(),
-                        terminates: branch.else_terminates,
+                let arms = branch
+                    .arms
+                    .iter()
+                    .map(|arm| Arm {
+                        label: arm.label.clone(),
+                        terminates: arm.terminates,
                         children: expand_body(
                             index,
                             owner,
                             caller,
-                            else_arm,
+                            &arm.body,
                             unresolved,
                             stack,
                             caller_depth,
                         ),
-                    });
-                }
+                    })
+                    .collect();
                 nodes.push(FlowNode::Branch(BranchNode {
                     kind: branch.kind,
                     condition_src: branch.condition_src.clone(),

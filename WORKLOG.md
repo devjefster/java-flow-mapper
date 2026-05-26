@@ -245,3 +245,29 @@ Verified:
 - `cargo fmt --check`
 - `cargo clippy --all-targets --all-features -- -D warnings`
 - `cargo test`
+
+## 2026-05-26 - Switch branch elements
+
+Implemented switch-statement flow-control support and added demo snapshot coverage:
+
+- Added `BranchKind::Switch` and reusable parsed branch arms so switch cases share the existing branch expansion/rendering path.
+- Parsed tree-sitter `switch_statement` and current `switch_expression` nodes as branch syntax, preserving the discriminant source, condition calls, `case` labels, `default`, arm bodies, and simple terminating arms.
+- Updated flow expansion to consume parsed branch arms generically instead of hardcoding only `then`/`else` arms.
+- Rendered switch arms in Markdown (`case ...:` / `default:`), JSON (`"kind": "switch"`), and Mermaid `alt`/`else case` blocks.
+- Activated the switch parser unit test with cases for ordinary labels, `default`, condition calls, arm calls, and a throwing arm.
+- Added an enum-backed switch to the existing `PUT /users/{id}` demo update flow through `UserService#activeChange(...)`.
+- Refreshed the PUT endpoint Markdown, JSON, and Mermaid snapshots so the fixture now covers switch output in all formats.
+
+Verified:
+
+- `cargo test parser::tests::parses_switch_statement_branches -- --nocapture`
+- `INSTA_UPDATE=always cargo test --test flow_demo flow_put_users_by_id_renders_expected`
+- `INSTA_UPDATE=always cargo test`
+- `cargo fmt --check`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+
+Known deferrals:
+
+- Switch-expression result values are not modeled beyond the branch/case structure discovered by tree-sitter.
+- Fallthrough semantics are not inferred; cases are represented as labeled arms with their collected body calls.
+- Ternary and try/catch flow-control elements remain deferred.

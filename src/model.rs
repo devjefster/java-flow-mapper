@@ -222,10 +222,19 @@ pub struct BranchSyntax {
     pub kind: BranchKind,
     pub condition_src: String,
     pub condition_calls: Vec<BodyElement>,
+    pub arms: Vec<BranchArmSyntax>,
     pub then_arm: Vec<BodyElement>,
     pub else_arm: Option<Vec<BodyElement>>,
     pub then_terminates: bool,
     pub else_terminates: bool,
+}
+
+/// Parsed branch arm before call targets are resolved.
+#[derive(Clone, Debug)]
+pub struct BranchArmSyntax {
+    pub label: String,
+    pub body: Vec<BodyElement>,
+    pub terminates: bool,
 }
 
 /// Parsed loop structure before call targets are resolved.
@@ -363,6 +372,8 @@ pub struct Arm {
 pub enum BranchKind {
     /// Source-level `if`.
     If,
+    /// Source-level `switch`.
+    Switch,
     /// Synthetic branch for `Optional` present/empty behavior.
     Optional,
 }

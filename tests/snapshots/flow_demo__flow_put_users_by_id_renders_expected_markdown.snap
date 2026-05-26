@@ -55,9 +55,17 @@ expression: stdout
       - `UpdateUserRequest#getAge()` *[resolved]*
       - `User#setAge(Integer)` *[resolved]*
     - `UpdateUserRequest#getActive()` *[resolved]*
-    - if request.getActive() != null:
-      - `UpdateUserRequest#getActive()` *[resolved]*
+    - `UserService#activeChange(User, Boolean)` *[resolved]*
+      - `User#getActive()` *[resolved]*
+      - `Boolean#equals(_)` *[external - JDK]*
+      - if requestedActive == null || requestedActive.equals(user.getActive()): *(terminates)*
+      - `Boolean#equals(_)` *[external - JDK]*
+      - if Boolean.TRUE.equals(requestedActive): *(terminates)*
+    - case ACTIVATE:
       - `User#setActive(Boolean)` *[resolved]*
+    - case DEACTIVATE:
+      - `User#setActive(Boolean)` *[resolved]*
+    - case UNCHANGED:
     - `UserRepository#save(User)` *[external - Spring Data JPA]*
     - `UserService#toResponse(User)` *[resolved]*
       - `User#getId()` *[resolved]*

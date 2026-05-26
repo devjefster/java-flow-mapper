@@ -407,20 +407,66 @@ expression: stdout
           "calls": []
         },
         {
+          "type": "call",
+          "method": "com.example.demo.service.UserService#activeChange(User, Boolean)",
+          "confidence": "resolved",
+          "scope": "intra-class",
+          "calls": [
+            {
+              "type": "call",
+              "method": "com.example.demo.entity.User#getActive()",
+              "confidence": "resolved",
+              "calls": []
+            },
+            {
+              "type": "call",
+              "method": "Boolean#equals(_)",
+              "confidence": "external",
+              "external_kind": "jdk",
+              "calls": []
+            },
+            {
+              "type": "branch",
+              "kind": "if",
+              "condition_src": "requestedActive == null || requestedActive.equals(user.getActive())",
+              "arms": [
+                {
+                  "label": "then",
+                  "terminates": true,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "type": "call",
+              "method": "Boolean#equals(_)",
+              "confidence": "external",
+              "external_kind": "jdk",
+              "calls": []
+            },
+            {
+              "type": "branch",
+              "kind": "if",
+              "condition_src": "Boolean.TRUE.equals(requestedActive)",
+              "arms": [
+                {
+                  "label": "then",
+                  "terminates": true,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
           "type": "branch",
-          "kind": "if",
-          "condition_src": "request.getActive() != null",
+          "kind": "switch",
+          "condition_src": "activeChange(user, request.getActive())",
           "arms": [
             {
-              "label": "then",
+              "label": "ACTIVATE",
               "terminates": false,
               "children": [
-                {
-                  "type": "call",
-                  "method": "com.example.demo.dto.UpdateUserRequest#getActive()",
-                  "confidence": "resolved",
-                  "calls": []
-                },
                 {
                   "type": "call",
                   "method": "com.example.demo.entity.User#setActive(Boolean)",
@@ -428,6 +474,23 @@ expression: stdout
                   "calls": []
                 }
               ]
+            },
+            {
+              "label": "DEACTIVATE",
+              "terminates": false,
+              "children": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#setActive(Boolean)",
+                  "confidence": "resolved",
+                  "calls": []
+                }
+              ]
+            },
+            {
+              "label": "UNCHANGED",
+              "terminates": false,
+              "children": []
             }
           ]
         },

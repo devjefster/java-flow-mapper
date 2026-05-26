@@ -323,6 +323,7 @@ fn scope_label(scope: &Scope) -> &'static str {
 fn branch_kind_json_label(kind: BranchKind) -> &'static str {
     match kind {
         BranchKind::If => "if",
+        BranchKind::Switch => "switch",
         BranchKind::Optional => "optional",
     }
 }

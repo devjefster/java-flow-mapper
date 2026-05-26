@@ -209,6 +209,8 @@ fn render_branch(
         let header = match (branch.kind, arm.label.as_str()) {
             (BranchKind::If, "then") => format!("if {}", branch.condition_src),
             (BranchKind::If, "else") => "else".to_string(),
+            (BranchKind::Switch, "default") => "default".to_string(),
+            (BranchKind::Switch, label) => format!("case {label}"),
             (BranchKind::Optional, label) => format!("optional {label}"),
             (BranchKind::If, label) => label.to_string(),
         };

@@ -88,9 +88,21 @@ sequenceDiagram
     UserService->>User: setAge(Integer)
     end
     UserService->>UpdateUserRequest: getActive()
-    alt request.getActive() != null
-    UserService->>UpdateUserRequest: getActive()
+    UserService->>UserService: activeChange(User, Boolean)
+    UserService->>User: getActive()
+    UserService->>Boolean: equals(_)
+    Note over Boolean: external (JDK)
+    alt requestedActive == null || requestedActive.equals(user.getActive())
+    end
+    UserService->>Boolean: equals(_)
+    Note over Boolean: external (JDK)
+    alt Boolean.TRUE.equals(requestedActive)
+    end
+    alt switch activeChange(user, request.getActive()) case ACTIVATE
     UserService->>User: setActive(Boolean)
+    else case DEACTIVATE
+    UserService->>User: setActive(Boolean)
+    else case UNCHANGED
     end
     UserService->>UserRepository: save(User)
     Note over UserRepository: external (Spring Data JPA)

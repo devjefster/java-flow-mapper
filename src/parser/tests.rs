@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use super::parse_file;
-use crate::model::{BodyElement, LoopKind, MethodInfo};
+use crate::model::{BodyElement, BranchKind, LoopKind, MethodInfo};
 
 #[test]
 fn parses_if_without_else_and_marks_throwing_then_arm() {
@@ -307,9 +307,42 @@ fn preserves_loop_inside_branch_arm() {
 }
 
 #[test]
-#[ignore]
 fn parses_switch_statement_branches() {
-    unimplemented!("switch_statement parsing is planned for PR #6");
+    let methods = parse_methods(
+        r#"
+            class Demo {
+                void route(Status status) {
+                    switch (status.kind()) {
+                        case ACTIVE:
+                            activate();
+                            break;
+                        case DISABLED:
+                            throw new IllegalStateException("disabled");
+                        default:
+                            ignore();
+                    }
+                }
+            }
+            "#,
+    );
+    let method = method(&methods, "route");
+
+    assert_eq!(method.body.len(), 1);
+    let BodyElement::Branch(branch) = &method.body[0] else {
+        panic!("expected switch branch");
+    };
+    assert_eq!(branch.kind, BranchKind::Switch);
+    assert_eq!(branch.condition_src, "status.kind()");
+    assert_eq!(call_name(&branch.condition_calls[0]), "kind");
+    assert_eq!(branch.arms.len(), 3);
+    assert_eq!(branch.arms[0].label, "ACTIVE");
+    assert_eq!(call_name(&branch.arms[0].body[0]), "activate");
+    assert!(!branch.arms[0].terminates);
+    assert_eq!(branch.arms[1].label, "DISABLED");
+    assert_eq!(call_name(&branch.arms[1].body[0]), "<init>");
+    assert!(branch.arms[1].terminates);
+    assert_eq!(branch.arms[2].label, "default");
+    assert_eq!(call_name(&branch.arms[2].body[0]), "ignore");
 }
 
 #[test]
