@@ -328,7 +328,7 @@ fn flow_get_users_active_with_max_depth_2_renders_truncated_mermaid_flowchart() 
 }
 
 fn run_flow(endpoint: &str, extra_args: &[&str]) -> String {
-    let demo = Path::new(env!("CARGO_MANIFEST_DIR")).join("demo-api/demo");
+    let demo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../demo-api/demo");
     let mut command = Command::cargo_bin("jfm").expect("binary exists");
     command.arg("flow").arg(demo).arg(endpoint);
     command.args(extra_args);

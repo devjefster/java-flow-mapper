@@ -7,6 +7,9 @@ use std::collections::HashSet;
 
 use thiserror::Error;
 
+pub use jfm_model as model;
+pub use jfm_spring as spring;
+
 use crate::model::{Confidence, Flow, Fqn, HttpVerb, ProjectIndex};
 
 use self::expand::expand_method;

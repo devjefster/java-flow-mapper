@@ -381,3 +381,22 @@ Known deferrals:
 
 - Mermaid MCP validation remains pending until Cursor refreshes and exposes the `mcp-mermaid` tool descriptor.
 - Flowchart paths remain structural; JFM still does not infer runtime branch truth, exception routing, or data-dependent loop exits.
+
+## 2026-05-26 - Multi-crate workspace layout
+
+Split the single binary crate into focused workspace members without changing `jfm flow` behavior:
+
+- Converted the root `Cargo.toml` into a workspace manifest with shared workspace package/dependency settings.
+- Added focused crates for CLI orchestration, flow resolution, shared models, Java parsing, rendering, and Spring helpers.
+- Kept the binary name as `jfm` through `crates/jfm-cli`.
+- Moved the existing integration tests and snapshots under `crates/jfm-cli/tests` so `assert_cmd` still exercises the workspace binary.
+- Updated README layout and snapshot-path notes for the workspace structure.
+
+Verified:
+
+- `cargo fmt --check`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+- `cargo test`
+- `cargo run -- flow demo-api/demo "GET /users/{id}"`
+- `cargo run -- flow demo-api/demo "GET /users/{id}" --format json`
+- `cargo run -- flow demo-api/demo "GET /users/{id}" --format mermaid`

@@ -8,10 +8,10 @@ use std::path::PathBuf;
 use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
 
-use crate::flow;
-use crate::model::{Diagram, Format, HttpVerb};
-use crate::parser;
-use crate::render;
+use jfm_flow as flow;
+use jfm_model::{Diagram, Format, HttpVerb};
+use jfm_parser as parser;
+use jfm_render as render;
 
 #[derive(Debug, Parser)]
 #[command(name = "jfm", about = "Map Java/Spring request flows")]

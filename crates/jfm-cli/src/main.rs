@@ -4,11 +4,6 @@
 //! and command execution to `cli`.
 
 mod cli;
-mod flow;
-mod model;
-mod parser;
-mod render;
-mod spring;
 
 use anyhow::Result;
 use tracing_subscriber::{EnvFilter, fmt};

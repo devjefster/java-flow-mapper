@@ -1,0 +1,21 @@
+[package]
+name = "jfm-cli"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+jfm-flow.workspace = true
+jfm-model.workspace = true
+jfm-parser.workspace = true
+jfm-render.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+assert_cmd.workspace = true
+insta.workspace = true
+
+[[bin]]
+name = "jfm"
+path = "src/main.rs"

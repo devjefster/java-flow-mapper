@@ -2,7 +2,7 @@
 
 `jfm` is a Rust CLI for mapping Java/Spring HTTP request flows. It indexes a Java project, finds a Spring MVC endpoint, resolves the controller/service/repository call path it can see, and renders the result as Markdown, JSON, or Mermaid diagrams.
 
-The project is currently a single binary crate focused on the `flow` command.
+The project is a Rust workspace of focused crates, with the `jfm` binary provided by `crates/jfm-cli`.
 
 ## What It Does
 
@@ -121,7 +121,7 @@ Focused integration test:
 cargo test --test flow_demo flow_get_users_by_id_renders_expected_markdown
 ```
 
-Snapshot tests use `insta` and live under `tests/snapshots/`. To intentionally refresh snapshots:
+Snapshot tests use `insta` and live under `crates/jfm-cli/tests/snapshots/`. To intentionally refresh snapshots:
 
 ```sh
 INSTA_UPDATE=always cargo test
@@ -156,9 +156,13 @@ Not implemented yet:
 ## Repository Layout
 
 ```text
-src/                 Rust CLI, parser, flow resolver, and renderers
-tests/               Integration and snapshot tests
-tests/snapshots/     Expected Markdown, JSON, and Mermaid outputs
+crates/jfm-cli/      Binary crate, Clap wiring, and command orchestration
+crates/jfm-flow/     Flow expansion and call resolution
+crates/jfm-model/    Shared data contracts
+crates/jfm-parser/   Java parsing and project indexing
+crates/jfm-render/   Markdown, JSON, and Mermaid renderers
+crates/jfm-spring/   Spring Data/JPA helpers
+crates/jfm-cli/tests/ Integration and snapshot tests
 demo-api/demo/       Spring Boot fixture parsed by the CLI
 WORKLOG.md           Notes from completed implementation slices
 ```
