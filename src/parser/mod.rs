@@ -6,10 +6,9 @@
 mod annotations;
 mod body;
 mod class;
-mod utils;
-#[allow(dead_code)]
 #[cfg(test)]
-mod walker;
+mod tests;
+mod utils;
 
 use std::fs;
 use std::path::Path;

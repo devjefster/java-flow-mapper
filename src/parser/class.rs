@@ -1,12 +1,14 @@
 //! Class, field, method, and type extraction from Java syntax trees.
 
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tree_sitter::Node;
 
-use super::body::parse_params;
-use super::utils::{header_text, line, named_children, node_text, text};
-use crate::model::{ClassInfo, ClassKind, Fqn, TypeRef};
+use super::body::{collect_body_elements, collect_locals, parse_params};
+use super::utils::{
+    header_text, line, named_children, node_text, significant_tokens, split_top_level, text,
+};
+use crate::model::{ClassInfo, ClassKind, FieldInfo, Fqn, MethodInfo, TypeRef};
 
 /// Extract the Java package declaration for a file.
 pub fn extract_package(root: Node<'_>, source: &str) -> String {
@@ -133,11 +135,11 @@ pub fn parse_class(
 }
 
 /// Parse a field declaration.
-pub fn parse_field(node: Node<'_>, source: &str) -> crate::model::FieldInfo {
+pub fn parse_field(node: Node<'_>, source: &str) -> FieldInfo {
     let declaration = text(node, source);
     let before_assignment = declaration.split('=').next().unwrap_or(&declaration);
     let before_semicolon = before_assignment.trim_end_matches(';').trim();
-    let tokens = crate::parser::utils::significant_tokens(before_semicolon);
+    let tokens = significant_tokens(before_semicolon);
     let name = tokens.last().cloned().unwrap_or_default();
     let ty = tokens
         .iter()
@@ -146,7 +148,7 @@ pub fn parse_field(node: Node<'_>, source: &str) -> crate::model::FieldInfo {
         .cloned()
         .unwrap_or_else(|| "Unknown".to_string());
 
-    crate::model::FieldInfo {
+    FieldInfo {
         name,
         ty: parse_type_ref(&ty),
         annotations: annotations_from_declaration(&declaration),
@@ -161,7 +163,7 @@ pub fn parse_method(
     class_fqn: &Fqn,
     class_name: &str,
     is_constructor: bool,
-) -> crate::model::MethodInfo {
+) -> MethodInfo {
     let declaration = text(node, source);
     let signature = signature_text(&declaration);
     let annotations = annotations_from_declaration(&declaration);
@@ -184,17 +186,17 @@ pub fn parse_method(
     let fqn = Fqn(format!("{}#{}({})", class_fqn.0, name, param_types));
     let body_node = node.child_by_field_name("body");
     let body = body_node
-        .map(|body| crate::parser::body::collect_body_elements(body, source))
+        .map(|body| collect_body_elements(body, source))
         .unwrap_or_default();
     let locals = body_node
         .map(|body| {
             let mut locals = HashMap::new();
-            crate::parser::body::collect_locals(body, source, &mut locals);
+            collect_locals(body, source, &mut locals);
             locals
         })
         .unwrap_or_default();
 
-    crate::model::MethodInfo {
+    MethodInfo {
         fqn,
         name,
         params,
@@ -202,7 +204,7 @@ pub fn parse_method(
         annotations,
         body,
         locals,
-        file: std::path::PathBuf::from(path),
+        file: PathBuf::from(path),
         line: line(node),
     }
 }
@@ -213,7 +215,7 @@ pub fn parse_type_ref(raw: &str) -> TypeRef {
     let generics = raw
         .find('<')
         .and_then(|start| raw.rfind('>').map(|end| (start, end)))
-        .map(|(start, end)| crate::parser::utils::split_top_level(&raw[start + 1..end], ','))
+        .map(|(start, end)| split_top_level(&raw[start + 1..end], ','))
         .unwrap_or_default();
 
     TypeRef { raw, generics }
@@ -234,7 +236,7 @@ pub fn parse_extends(text: &str, kind: &ClassKind) -> Vec<TypeRef> {
         .split(end_marker)
         .next()
         .unwrap_or(after_extends);
-    crate::parser::utils::split_top_level(extends, ',')
+    split_top_level(extends, ',')
         .into_iter()
         .map(|ty| parse_type_ref(&ty))
         .collect()
@@ -246,7 +248,7 @@ pub fn parse_implements(text: &str) -> Vec<TypeRef> {
     let Some(after_implements) = header.split(" implements ").nth(1) else {
         return Vec::new();
     };
-    crate::parser::utils::split_top_level(after_implements, ',')
+    split_top_level(after_implements, ',')
         .into_iter()
         .map(|ty| parse_type_ref(&ty))
         .collect()
@@ -264,14 +266,12 @@ fn annotations_from_declaration(declaration: &str) -> Vec<String> {
 
 fn method_name(signature: &str) -> Option<String> {
     let before_params = signature.split('(').next()?.trim();
-    crate::parser::utils::significant_tokens(before_params)
-        .last()
-        .cloned()
+    significant_tokens(before_params).last().cloned()
 }
 
 fn return_type(signature: &str) -> Option<String> {
     let before_params = signature.split('(').next()?.trim();
-    crate::parser::utils::significant_tokens(before_params)
+    significant_tokens(before_params)
         .iter()
         .rev()
         .nth(1)

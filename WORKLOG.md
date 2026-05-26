@@ -229,3 +229,19 @@ Known PR #7 deferrals:
 - Classic `for` initializer/update typing remains shallow; only calls are surfaced.
 - Stream loop modeling is still a hardcoded known-shapes table, not general Java type inference.
 - Mermaid loop rendering does not distinguish condition/body/update sections; Markdown and JSON keep those sections explicit.
+
+## 2026-05-26 - Parser module refactor
+
+Completed the `src/parser/walker.rs` decomposition without changing parser behavior:
+
+- Kept `src/parser/mod.rs` as the high-level entry point for project indexing, `parse_file`, and endpoint assembly.
+- Preserved the split modules for focused responsibilities: `class.rs`, `body.rs`, `utils.rs`, and `annotations.rs`.
+- Removed the duplicate legacy `src/parser/walker.rs` implementation.
+- Moved the walker regression tests into `src/parser/tests.rs` so they exercise the new module entry point directly.
+- Cleaned sibling-module imports in `class.rs` and `body.rs` to avoid `crate::parser::...` paths inside the parser module.
+
+Verified:
+
+- `cargo fmt --check`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+- `cargo test`

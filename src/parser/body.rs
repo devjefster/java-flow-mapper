@@ -4,10 +4,16 @@ use std::collections::HashMap;
 use tree_sitter::Node;
 
 use crate::model::{
-    BodyElement, CallSite, LambdaKind, LambdaSyntax, LoopKind, LoopLocal, ReceiverKind,
+    BodyElement, BranchKind, BranchSyntax, CallSite, LambdaKind, LambdaSyntax, LoopKind, LoopLocal,
+    LoopSyntax, ParamInfo, ReceiverKind, TypeRef,
 };
 
-use super::utils::{named_children, node_text, text};
+use super::annotations::param_source;
+use super::class::parse_type_ref;
+use super::utils::{
+    count_args, line, named_children, node_text, significant_tokens, split_top_level,
+    starts_uppercase, strip_generics, text,
+};
 
 /// Collect renderable body elements from a Java syntax node.
 pub fn collect_body_elements(node: Node<'_>, source: &str) -> Vec<BodyElement> {
@@ -53,13 +59,13 @@ pub fn collect_body_elements_into(node: Node<'_>, source: &str, elements: &mut V
 }
 
 /// Parse an `if_statement` into a branch syntax node.
-pub fn parse_if_statement(node: Node<'_>, source: &str) -> crate::model::BranchSyntax {
+pub fn parse_if_statement(node: Node<'_>, source: &str) -> BranchSyntax {
     let condition = node.child_by_field_name("condition");
     let consequence = node.child_by_field_name("consequence");
     let alternative = node.child_by_field_name("alternative");
 
-    crate::model::BranchSyntax {
-        kind: crate::model::BranchKind::If,
+    BranchSyntax {
+        kind: BranchKind::If,
         condition_src: condition
             .map(|condition| condition_source(condition, source))
             .unwrap_or_default(),
@@ -83,13 +89,13 @@ fn is_loop_statement(kind: &str) -> bool {
 }
 
 /// Parse a Java loop statement into a loop syntax node.
-pub fn parse_loop_statement(node: Node<'_>, source: &str) -> crate::model::LoopSyntax {
+pub fn parse_loop_statement(node: Node<'_>, source: &str) -> LoopSyntax {
     match node.kind() {
         "for_statement" => parse_for_statement(node, source),
         "enhanced_for_statement" => parse_enhanced_for_statement(node, source),
         "while_statement" => parse_while_statement(node, source),
         "do_statement" => parse_do_statement(node, source),
-        _ => crate::model::LoopSyntax {
+        _ => LoopSyntax {
             kind: LoopKind::For,
             source: header_source(node, source),
             condition_calls: Vec::new(),
@@ -100,7 +106,7 @@ pub fn parse_loop_statement(node: Node<'_>, source: &str) -> crate::model::LoopS
     }
 }
 
-fn parse_for_statement(node: Node<'_>, source: &str) -> crate::model::LoopSyntax {
+fn parse_for_statement(node: Node<'_>, source: &str) -> LoopSyntax {
     let mut condition_calls = Vec::new();
     if let Some(init) = node.child_by_field_name("init") {
         condition_calls.extend(collect_body_elements(init, source));
@@ -109,7 +115,7 @@ fn parse_for_statement(node: Node<'_>, source: &str) -> crate::model::LoopSyntax
         condition_calls.extend(collect_body_elements(condition, source));
     }
 
-    crate::model::LoopSyntax {
+    LoopSyntax {
         kind: LoopKind::For,
         source: header_source(node, source),
         condition_calls,
@@ -124,12 +130,12 @@ fn parse_for_statement(node: Node<'_>, source: &str) -> crate::model::LoopSyntax
     }
 }
 
-fn parse_enhanced_for_statement(node: Node<'_>, source: &str) -> crate::model::LoopSyntax {
+fn parse_enhanced_for_statement(node: Node<'_>, source: &str) -> LoopSyntax {
     let iterable = node
         .child_by_field_name("value")
         .or_else(|| node.child_by_field_name("iterable"));
 
-    crate::model::LoopSyntax {
+    LoopSyntax {
         kind: LoopKind::EnhancedFor,
         source: header_source(node, source),
         condition_calls: iterable
@@ -143,10 +149,10 @@ fn parse_enhanced_for_statement(node: Node<'_>, source: &str) -> crate::model::L
     }
 }
 
-fn parse_while_statement(node: Node<'_>, source: &str) -> crate::model::LoopSyntax {
+fn parse_while_statement(node: Node<'_>, source: &str) -> LoopSyntax {
     let condition = node.child_by_field_name("condition");
 
-    crate::model::LoopSyntax {
+    LoopSyntax {
         kind: LoopKind::While,
         source: condition
             .map(|condition| condition_source(condition, source))
@@ -162,10 +168,10 @@ fn parse_while_statement(node: Node<'_>, source: &str) -> crate::model::LoopSynt
     }
 }
 
-fn parse_do_statement(node: Node<'_>, source: &str) -> crate::model::LoopSyntax {
+fn parse_do_statement(node: Node<'_>, source: &str) -> LoopSyntax {
     let condition = node.child_by_field_name("condition");
 
-    crate::model::LoopSyntax {
+    LoopSyntax {
         kind: LoopKind::DoWhile,
         source: condition
             .map(|condition| condition_source(condition, source))
@@ -191,30 +197,27 @@ fn enhanced_for_local(node: Node<'_>, source: &str) -> Option<LoopLocal> {
     match (name, ty) {
         (Some(name), Some(ty)) => Some(LoopLocal {
             name,
-            ty: crate::parser::class::parse_type_ref(&ty),
+            ty: parse_type_ref(&ty),
         }),
         _ => enhanced_for_local_from_header(&header_source(node, source)),
     }
 }
 
 fn enhanced_for_type_from_header(header: &str) -> Option<String> {
-    header.split(':').next().and_then(|declaration| {
-        crate::parser::utils::significant_tokens(declaration)
-            .iter()
-            .rev()
-            .nth(1)
-            .cloned()
-    })
+    header
+        .split(':')
+        .next()
+        .and_then(|declaration| significant_tokens(declaration).iter().rev().nth(1).cloned())
 }
 
 fn enhanced_for_local_from_header(header: &str) -> Option<LoopLocal> {
     let declaration = header.split(':').next()?;
-    let tokens = crate::parser::utils::significant_tokens(declaration);
+    let tokens = significant_tokens(declaration);
     let name = tokens.last()?.clone();
     let ty = tokens.iter().rev().nth(1)?.clone();
     Some(LoopLocal {
         name,
-        ty: crate::parser::class::parse_type_ref(&ty),
+        ty: parse_type_ref(&ty),
     })
 }
 
@@ -280,7 +283,7 @@ pub fn parse_method_invocation(node: Node<'_>, source: &str) -> Option<CallSite>
         .unwrap_or_default();
     let arity = node
         .child_by_field_name("arguments")
-        .map(|arguments| crate::parser::utils::count_args(&text(arguments, source)))
+        .map(|arguments| count_args(&text(arguments, source)))
         .unwrap_or(0);
 
     Some(CallSite {
@@ -288,7 +291,7 @@ pub fn parse_method_invocation(node: Node<'_>, source: &str) -> Option<CallSite>
         method_name,
         arity,
         lambdas,
-        line: crate::parser::utils::line(node),
+        line: line(node),
     })
 }
 
@@ -300,24 +303,20 @@ pub fn parse_constructor_invocation(node: Node<'_>, source: &str) -> Option<Call
         .or_else(|| constructor_type_from_text(&text(node, source)))?;
     let arity = node
         .child_by_field_name("arguments")
-        .map(|arguments| crate::parser::utils::count_args(&text(arguments, source)))
+        .map(|arguments| count_args(&text(arguments, source)))
         .unwrap_or(0);
 
     Some(CallSite {
-        receiver: ReceiverKind::Constructor(crate::parser::utils::strip_generics(&ty).to_string()),
+        receiver: ReceiverKind::Constructor(strip_generics(&ty).to_string()),
         method_name: "<init>".to_string(),
         arity,
         lambdas: Vec::new(),
-        line: crate::parser::utils::line(node),
+        line: line(node),
     })
 }
 
 /// Collect local variable declarations visible within a method body.
-pub fn collect_locals(
-    node: Node<'_>,
-    source: &str,
-    locals: &mut HashMap<String, crate::model::TypeRef>,
-) {
+pub fn collect_locals(node: Node<'_>, source: &str, locals: &mut HashMap<String, TypeRef>) {
     if node.kind() == "local_variable_declaration"
         && let Some((name, ty)) = parse_local_declaration(&text(node, source))
     {
@@ -330,13 +329,13 @@ pub fn collect_locals(
 }
 
 /// Parse a local variable declaration into its name and type.
-pub fn parse_local_declaration(declaration: &str) -> Option<(String, crate::model::TypeRef)> {
+pub fn parse_local_declaration(declaration: &str) -> Option<(String, TypeRef)> {
     let before_assignment = declaration.split('=').next().unwrap_or(declaration);
     let before_semicolon = before_assignment.trim_end_matches(';').trim();
-    let tokens = crate::parser::utils::significant_tokens(before_semicolon);
+    let tokens = significant_tokens(before_semicolon);
     let name = tokens.last()?.clone();
     let ty = tokens.iter().rev().nth(1)?.clone();
-    Some((name, crate::parser::class::parse_type_ref(&ty)))
+    Some((name, parse_type_ref(&ty)))
 }
 
 fn receiver_kind(node: Node<'_>, source: &str) -> ReceiverKind {
@@ -356,12 +355,12 @@ fn receiver_kind(node: Node<'_>, source: &str) -> ReceiverKind {
     if trimmed.contains('.') {
         let first = trimmed.split('.').next().unwrap_or(trimmed);
         // Uppercase leading segments are treated as static/class receivers.
-        if crate::parser::utils::starts_uppercase(first) {
+        if starts_uppercase(first) {
             return ReceiverKind::TypeName(first.to_string());
         }
     }
 
-    if crate::parser::utils::starts_uppercase(trimmed) {
+    if starts_uppercase(trimmed) {
         ReceiverKind::TypeName(trimmed.to_string())
     } else {
         ReceiverKind::Local(trimmed.to_string())
@@ -380,7 +379,7 @@ fn collect_lambda_arguments(node: Node<'_>, source: &str, lambdas: &mut Vec<Lamb
         "lambda_expression" => {
             let body = node
                 .child_by_field_name("body")
-                .map(|body| crate::parser::body::collect_body_elements(body, source))
+                .map(|body| collect_body_elements(body, source))
                 .unwrap_or_default();
             lambdas.push(LambdaSyntax {
                 kind: LambdaKind::Lambda,
@@ -406,17 +405,17 @@ fn collect_lambda_arguments(node: Node<'_>, source: &str, lambdas: &mut Vec<Lamb
 }
 
 /// Parse comma-separated method parameters.
-pub fn parse_params(params: &str) -> Vec<crate::model::ParamInfo> {
-    crate::parser::utils::split_top_level(params, ',')
+pub fn parse_params(params: &str) -> Vec<ParamInfo> {
+    split_top_level(params, ',')
         .into_iter()
         .filter_map(|param| {
-            let tokens = crate::parser::utils::significant_tokens(&param);
+            let tokens = significant_tokens(&param);
             let name = tokens.last()?.clone();
             let ty = tokens.iter().rev().nth(1)?.clone();
-            Some(crate::model::ParamInfo {
+            Some(ParamInfo {
                 name,
                 ty,
-                source: crate::parser::annotations::param_source(&param),
+                source: param_source(&param),
             })
         })
         .collect()
