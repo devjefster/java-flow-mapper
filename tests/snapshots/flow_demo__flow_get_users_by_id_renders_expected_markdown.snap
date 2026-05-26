@@ -18,7 +18,7 @@ expression: stdout
         - optional empty: *(terminates)*
           - lambda `() -> new BusinessException(ErrorCode.USER_NOT_FOUND)`:
             - `BusinessException#<init>(ErrorCode)` *[resolved]*
-              - `Unknown#getDefaultMessage()` *[unresolved]* - receiver type unknown
+              - `ErrorCode#getDefaultMessage()` *[resolved]*
     - `UserService#toResponse(User)` *[resolved]*
       - `User#getId()` *[resolved]*
       - `User#getName()` *[resolved]*
@@ -34,7 +34,6 @@ expression: stdout
 ## Unresolved / external
 
 - `UserRepository#findById(Long)` - `external` (Spring Data JPA)
-- `Unknown#getDefaultMessage()` - `unresolved` (receiver type unknown)
 
 ## Notes
 

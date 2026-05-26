@@ -15,17 +15,17 @@ expression: stdout
     - `UserService#validateEmailUniqueness(String)` *[resolved]*
       - `Normalizers#normalizeEmail(String)` *[resolved]*
         - if email == null: *(terminates)*
-        - `String#trim()` *[external - JDK]*
-        - `String#toLowerCase()` *[external - JDK]*
+        - `String#trim()` *[external - JDK library]*
+        - `String#toLowerCase()` *[external - JDK library]*
       - `UserRepository#existsByEmail(String)` *[external - Spring Data JPA]*
       - if repository.existsByEmail(normalized): *(terminates)*
         - `BusinessException#<init>(ErrorCode)` *[resolved]*
-          - `Unknown#getDefaultMessage()` *[unresolved]* - receiver type unknown
+          - `ErrorCode#getDefaultMessage()` *[resolved]*
     - `CreateUserRequest#getAge()` *[resolved]*
     - if request.getAge() < 18: *(terminates)*
       - `BusinessException#<init>(ErrorCode)` *(see above)*
     - `CreateUserRequest#getName()` *[resolved]*
-    - `String#trim()` *[external - JDK]*
+    - `String#trim()` *[external - JDK library]*
     - `CreateUserRequest#getEmail()` *[resolved]*
     - `Normalizers#normalizeEmail(String)` *(see above)*
     - `CreateUserRequest#getAge()` *[resolved]*
@@ -45,11 +45,8 @@ expression: stdout
 
 ## Unresolved / external
 
-- `String#toLowerCase()` - `external` (JDK)
-- `String#trim()` - `external` (JDK)
 - `UserRepository#existsByEmail(String)` - `external` (Spring Data JPA)
 - `UserRepository#save(User)` - `external` (Spring Data JPA)
-- `Unknown#getDefaultMessage()` - `unresolved` (receiver type unknown)
 
 ## Notes
 

@@ -9,7 +9,7 @@ sequenceDiagram
     participant UserRepository
     participant Optional
     participant BusinessException
-    participant Unknown
+    participant ErrorCode
     participant User
     participant Boolean
     UserController->>UserService: delete(Long)
@@ -21,16 +21,13 @@ sequenceDiagram
     alt optional present
     else optional empty
     Optional->>BusinessException: <init>(...)
-    BusinessException->>Unknown: getDefaultMessage()
-    Note over Unknown: unresolved (receiver type unknown)
+    BusinessException->>ErrorCode: getDefaultMessage()
     end
     UserService->>User: getActive()
     UserService->>Boolean: equals(_)
-    Note over Boolean: external (JDK)
     alt Boolean.TRUE.equals(user.getActive())
     UserService->>BusinessException: <init>(...)
-    BusinessException->>Unknown: getDefaultMessage()
-    Note over Unknown: unresolved (receiver type unknown)
+    BusinessException->>ErrorCode: getDefaultMessage()
     end
     UserService->>UserRepository: delete(User)
     Note over UserRepository: external (Spring Data JPA)

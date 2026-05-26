@@ -11,7 +11,7 @@ sequenceDiagram
     participant String
     participant UserRepository
     participant BusinessException
-    participant Unknown
+    participant ErrorCode
     participant User
     participant UserResponse
     UserController->>UserService: create(CreateUserRequest)
@@ -21,33 +21,26 @@ sequenceDiagram
     alt email == null
     end
     Normalizers->>String: trim()
-    Note over String: external (JDK)
     Normalizers->>String: toLowerCase()
-    Note over String: external (JDK)
     UserService->>UserRepository: existsByEmail(String)
     Note over UserRepository: external (Spring Data JPA)
     alt repository.existsByEmail(normalized)
     UserService->>BusinessException: <init>(...)
-    BusinessException->>Unknown: getDefaultMessage()
-    Note over Unknown: unresolved (receiver type unknown)
+    BusinessException->>ErrorCode: getDefaultMessage()
     end
     UserService->>CreateUserRequest: getAge()
     alt request.getAge() < 18
     UserService->>BusinessException: <init>(...)
-    BusinessException->>Unknown: getDefaultMessage()
-    Note over Unknown: unresolved (receiver type unknown)
+    BusinessException->>ErrorCode: getDefaultMessage()
     end
     UserService->>CreateUserRequest: getName()
     UserService->>String: trim()
-    Note over String: external (JDK)
     UserService->>CreateUserRequest: getEmail()
     UserService->>Normalizers: normalizeEmail(String)
     alt email == null
     end
     Normalizers->>String: trim()
-    Note over String: external (JDK)
     Normalizers->>String: toLowerCase()
-    Note over String: external (JDK)
     UserService->>CreateUserRequest: getAge()
     UserService->>User: <init>(...)
     UserService->>UserRepository: save(User)

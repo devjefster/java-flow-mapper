@@ -65,7 +65,7 @@ pub fn collect_classes(
     classes: &mut Vec<ClassInfo>,
 ) {
     match node.kind() {
-        "class_declaration" | "interface_declaration" => {
+        "class_declaration" | "interface_declaration" | "enum_declaration" => {
             classes.push(parse_class(node, source, path, package, imports));
         }
         _ => {
@@ -91,10 +91,10 @@ pub fn parse_class(
     } else {
         Fqn(format!("{package}.{simple_name}"))
     };
-    let kind = if node.kind() == "interface_declaration" {
-        ClassKind::Interface
-    } else {
-        ClassKind::Class
+    let kind = match node.kind() {
+        "interface_declaration" => ClassKind::Interface,
+        "enum_declaration" => ClassKind::Enum,
+        _ => ClassKind::Class,
     };
     let text = text(node, source);
     let annotations = annotations_from_declaration(&text);
@@ -104,18 +104,15 @@ pub fn parse_class(
     let mut fields = Vec::new();
     let mut methods = Vec::new();
     if let Some(body) = class_body(node) {
-        for child in named_children(body) {
-            match child.kind() {
-                "field_declaration" => fields.push(parse_field(child, source)),
-                "method_declaration" => {
-                    methods.push(parse_method(child, source, path, &fqn, &simple_name, false))
-                }
-                "constructor_declaration" => {
-                    methods.push(parse_method(child, source, path, &fqn, &simple_name, true))
-                }
-                _ => {}
-            }
-        }
+        collect_members(
+            body,
+            source,
+            path,
+            &fqn,
+            &simple_name,
+            &mut fields,
+            &mut methods,
+        );
     }
 
     ClassInfo {
@@ -131,6 +128,42 @@ pub fn parse_class(
         methods,
         file: path.to_path_buf(),
         line: line(node),
+    }
+}
+
+fn collect_members(
+    node: Node<'_>,
+    source: &str,
+    path: &Path,
+    class_fqn: &Fqn,
+    simple_name: &str,
+    fields: &mut Vec<FieldInfo>,
+    methods: &mut Vec<MethodInfo>,
+) {
+    for child in named_children(node) {
+        match child.kind() {
+            "field_declaration" => fields.push(parse_field(child, source)),
+            "method_declaration" => methods.push(parse_method(
+                child,
+                source,
+                path,
+                class_fqn,
+                simple_name,
+                false,
+            )),
+            "constructor_declaration" => methods.push(parse_method(
+                child,
+                source,
+                path,
+                class_fqn,
+                simple_name,
+                true,
+            )),
+            "enum_body_declarations" => {
+                collect_members(child, source, path, class_fqn, simple_name, fields, methods);
+            }
+            _ => {}
+        }
     }
 }
 
@@ -227,10 +260,9 @@ pub fn parse_extends(text: &str, kind: &ClassKind) -> Vec<TypeRef> {
     let Some(after_extends) = header.split(" extends ").nth(1) else {
         return Vec::new();
     };
-    let end_marker = if *kind == ClassKind::Class {
-        " implements "
-    } else {
-        "{"
+    let end_marker = match kind {
+        ClassKind::Class => " implements ",
+        ClassKind::Interface | ClassKind::Enum => "{",
     };
     let extends = after_extends
         .split(end_marker)
@@ -313,6 +345,8 @@ fn declaration_name(node: Node<'_>, source: &str) -> Option<String> {
     let declaration = text(node, source);
     let keyword = if node.kind() == "interface_declaration" {
         "interface"
+    } else if node.kind() == "enum_declaration" {
+        "enum"
     } else {
         "class"
     };

@@ -30,7 +30,7 @@ expression: stdout
           "type": "call",
           "method": "ArrayList#<init>()",
           "confidence": "external",
-          "external_kind": "jdk",
+          "external_kind": "jdk-library",
           "calls": []
         },
         {
@@ -49,7 +49,7 @@ expression: stdout
               "type": "call",
               "method": "Boolean#equals(_)",
               "confidence": "external",
-              "external_kind": "jdk",
+              "external_kind": "jdk-library",
               "calls": []
             },
             {
@@ -109,7 +109,7 @@ expression: stdout
                       "type": "call",
                       "method": "List#add(_)",
                       "confidence": "external",
-                      "external_kind": "jdk",
+                      "external_kind": "jdk-library",
                       "calls": []
                     }
                   ]
@@ -122,8 +122,8 @@ expression: stdout
         {
           "type": "call",
           "method": "List#forEach(Consumer)",
-          "confidence": "external",
-          "external_kind": "jdk",
+          "confidence": "control",
+          "control_kind": "traversal",
           "calls": [
             {
               "type": "loop",
@@ -161,7 +161,7 @@ expression: stdout
                                   "type": "call",
                                   "method": "IllegalStateException#<init>(_)",
                                   "confidence": "external",
-                                  "external_kind": "jdk",
+                                  "external_kind": "jdk-library",
                                   "calls": []
                                 }
                               ]

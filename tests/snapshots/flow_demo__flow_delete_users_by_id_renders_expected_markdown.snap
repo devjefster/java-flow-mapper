@@ -18,9 +18,9 @@ expression: stdout
         - optional empty: *(terminates)*
           - lambda `() -> new BusinessException(ErrorCode.USER_NOT_FOUND)`:
             - `BusinessException#<init>(ErrorCode)` *[resolved]*
-              - `Unknown#getDefaultMessage()` *[unresolved]* - receiver type unknown
+              - `ErrorCode#getDefaultMessage()` *[resolved]*
     - `User#getActive()` *[resolved]*
-    - `Boolean#equals(_)` *[external - JDK]*
+    - `Boolean#equals(_)` *[external - JDK library]*
     - if Boolean.TRUE.equals(user.getActive()): *(terminates)*
       - `BusinessException#<init>(ErrorCode)` *(see above)*
     - `UserRepository#delete(User)` *[external - Spring Data JPA]*
@@ -31,10 +31,8 @@ expression: stdout
 
 ## Unresolved / external
 
-- `Boolean#equals(_)` - `external` (JDK)
 - `UserRepository#delete(User)` - `external` (Spring Data JPA)
 - `UserRepository#findById(Long)` - `external` (Spring Data JPA)
-- `Unknown#getDefaultMessage()` - `unresolved` (receiver type unknown)
 
 ## Notes
 

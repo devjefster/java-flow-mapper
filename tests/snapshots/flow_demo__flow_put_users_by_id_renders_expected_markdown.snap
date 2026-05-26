@@ -18,24 +18,24 @@ expression: stdout
         - optional empty: *(terminates)*
           - lambda `() -> new BusinessException(ErrorCode.USER_NOT_FOUND)`:
             - `BusinessException#<init>(ErrorCode)` *[resolved]*
-              - `Unknown#getDefaultMessage()` *[unresolved]* - receiver type unknown
+              - `ErrorCode#getDefaultMessage()` *[resolved]*
     - `User#getActive()` *[resolved]*
-    - `Boolean#equals(_)` *[external - JDK]*
+    - `Boolean#equals(_)` *[external - JDK library]*
     - `UpdateUserRequest#getEmail()` *[resolved]*
     - if Boolean.FALSE.equals(user.getActive()) && request.getEmail() != null: *(terminates)*
       - `BusinessException#<init>(ErrorCode)` *(see above)*
     - `UpdateUserRequest#getEmail()` *[resolved]*
     - `UpdateUserRequest#getEmail()` *[resolved]*
     - `User#getEmail()` *[resolved]*
-    - `String#equalsIgnoreCase(_)` *[external - JDK]*
+    - `String#equalsIgnoreCase(_)` *[external - JDK library]*
     - if request.getEmail() != null &&
                 !request.getEmail().equalsIgnoreCase(user.getEmail()):
       - `UpdateUserRequest#getEmail()` *[resolved]*
       - `UserService#validateEmailUniqueness(String)` *[resolved]*
         - `Normalizers#normalizeEmail(String)` *[resolved]*
           - if email == null: *(terminates)*
-          - `String#trim()` *[external - JDK]*
-          - `String#toLowerCase()` *[external - JDK]*
+          - `String#trim()` *[external - JDK library]*
+          - `String#toLowerCase()` *[external - JDK library]*
         - `UserRepository#existsByEmail(String)` *[external - Spring Data JPA]*
         - if repository.existsByEmail(normalized): *(terminates)*
           - `BusinessException#<init>(ErrorCode)` *(see above)*
@@ -45,7 +45,7 @@ expression: stdout
     - `UpdateUserRequest#getName()` *[resolved]*
     - if request.getName() != null:
       - `UpdateUserRequest#getName()` *[resolved]*
-      - `String#trim()` *[external - JDK]*
+      - `String#trim()` *[external - JDK library]*
       - `User#setName(String)` *[resolved]*
     - `UpdateUserRequest#getAge()` *[resolved]*
     - if request.getAge() != null:
@@ -57,9 +57,9 @@ expression: stdout
     - `UpdateUserRequest#getActive()` *[resolved]*
     - `UserService#activeChange(User, Boolean)` *[resolved]*
       - `User#getActive()` *[resolved]*
-      - `Boolean#equals(_)` *[external - JDK]*
+      - `Boolean#equals(_)` *[external - JDK library]*
       - if requestedActive == null || requestedActive.equals(user.getActive()): *(terminates)*
-      - `Boolean#equals(_)` *[external - JDK]*
+      - `Boolean#equals(_)` *[external - JDK library]*
       - if Boolean.TRUE.equals(requestedActive): *(terminates)*
     - case ACTIVATE:
       - `User#setActive(Boolean)` *[resolved]*
@@ -73,6 +73,14 @@ expression: stdout
     - else:
       - `UserService#requestedStatus(UpdateUserRequest)` *[resolved]*
         - `UpdateUserRequest#getActive()` *[resolved]*
+    - try:
+      - `UserService#recordUpdateStatus(String)` *[resolved]*
+        - `String#trim()` *[external - JDK library]*
+    - catch IllegalArgumentException ex:
+      - `UserService#recoverUpdateStatus(IllegalArgumentException)` *[resolved]*
+    - finally:
+      - `UserService#auditUpdateAttempt(User)` *[resolved]*
+        - `User#getId()` *[resolved]*
     - `UserRepository#save(User)` *[external - Spring Data JPA]*
     - `UserService#toResponse(User)` *[resolved]*
       - `User#getId()` *[resolved]*
@@ -89,14 +97,9 @@ expression: stdout
 
 ## Unresolved / external
 
-- `Boolean#equals(_)` - `external` (JDK)
-- `String#equalsIgnoreCase(_)` - `external` (JDK)
-- `String#toLowerCase()` - `external` (JDK)
-- `String#trim()` - `external` (JDK)
 - `UserRepository#existsByEmail(String)` - `external` (Spring Data JPA)
 - `UserRepository#findById(Long)` - `external` (Spring Data JPA)
 - `UserRepository#save(User)` - `external` (Spring Data JPA)
-- `Unknown#getDefaultMessage()` - `unresolved` (receiver type unknown)
 
 ## Notes
 

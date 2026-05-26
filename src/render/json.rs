@@ -302,6 +302,7 @@ fn confidence_label(confidence: &Confidence) -> &'static str {
 fn external_kind_json_label(kind: &ExternalKind) -> &'static str {
     match kind {
         ExternalKind::Jdk => "jdk",
+        ExternalKind::JdkLibrary => "jdk-library",
         ExternalKind::SpringData => "spring-data",
         ExternalKind::ThirdParty => "third-party",
         ExternalKind::Unknown => "unknown",
@@ -311,6 +312,7 @@ fn external_kind_json_label(kind: &ExternalKind) -> &'static str {
 fn control_kind_json_label(kind: &ControlKind) -> &'static str {
     match kind {
         ControlKind::Optional => "optional",
+        ControlKind::Traversal => "traversal",
     }
 }
 
@@ -325,6 +327,7 @@ fn branch_kind_json_label(kind: BranchKind) -> &'static str {
         BranchKind::If => "if",
         BranchKind::Switch => "switch",
         BranchKind::Ternary => "ternary",
+        BranchKind::TryCatch => "try_catch",
         BranchKind::Optional => "optional",
     }
 }

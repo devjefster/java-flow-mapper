@@ -55,6 +55,8 @@ pub enum Confidence {
 pub enum ExternalKind {
     /// Java, javax, or Jakarta APIs.
     Jdk,
+    /// Low-signal Java library calls that are usually implementation detail.
+    JdkLibrary,
     /// Synthesized Spring Data repository behavior.
     SpringData,
     /// Imported non-JDK code outside the indexed project.
@@ -68,6 +70,8 @@ pub enum ExternalKind {
 pub enum ControlKind {
     /// Java `Optional` methods with present/empty arms.
     Optional,
+    /// Java collection or stream traversal methods with callback bodies.
+    Traversal,
 }
 
 /// HTTP verb for a Spring endpoint.
@@ -157,6 +161,7 @@ pub struct ClassInfo {
 pub enum ClassKind {
     Class,
     Interface,
+    Enum,
 }
 
 /// Java type reference, preserving the raw spelling and top-level generics.
@@ -376,6 +381,8 @@ pub enum BranchKind {
     Switch,
     /// Source-level ternary expression.
     Ternary,
+    /// Source-level `try` / `catch` / `finally` block.
+    TryCatch,
     /// Synthetic branch for `Optional` present/empty behavior.
     Optional,
 }

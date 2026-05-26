@@ -44,6 +44,11 @@ pub fn collect_body_elements_into(node: Node<'_>, source: &str, elements: &mut V
         return;
     }
 
+    if node.kind() == "try_statement" {
+        elements.push(BodyElement::Branch(parse_try_statement(node, source)));
+        return;
+    }
+
     if is_loop_statement(node.kind()) {
         elements.push(BodyElement::Loop(parse_loop_statement(node, source)));
         return;
@@ -229,6 +234,86 @@ pub fn parse_ternary_expression(node: Node<'_>, source: &str) -> BranchSyntax {
         then_terminates: false,
         else_terminates: false,
     }
+}
+
+/// Parse a try/catch/finally statement into labeled branch arms.
+pub fn parse_try_statement(node: Node<'_>, source: &str) -> BranchSyntax {
+    let mut arms = Vec::new();
+    let body = node.child_by_field_name("body");
+    if let Some(body) = body {
+        arms.push(BranchArmSyntax {
+            label: "try".to_string(),
+            body: collect_body_elements(body, source),
+            terminates: arm_terminates(body),
+        });
+    }
+
+    for child in named_children(node) {
+        match child.kind() {
+            "catch_clause" => arms.push(catch_arm(child, source)),
+            "finally_clause" => arms.push(finally_arm(child, source)),
+            _ => {}
+        }
+    }
+
+    BranchSyntax {
+        kind: BranchKind::TryCatch,
+        condition_src: "try".to_string(),
+        condition_calls: try_resource_calls(node, source),
+        arms,
+        then_arm: body
+            .map(|body| collect_body_elements(body, source))
+            .unwrap_or_default(),
+        else_arm: None,
+        then_terminates: body.is_some_and(arm_terminates),
+        else_terminates: false,
+    }
+}
+
+fn catch_arm(catch: Node<'_>, source: &str) -> BranchArmSyntax {
+    let body = catch.child_by_field_name("body").or_else(|| {
+        named_children(catch)
+            .into_iter()
+            .find(|child| child.kind() == "block")
+    });
+    BranchArmSyntax {
+        label: format!("catch {}", catch_label(catch, source)),
+        body: body
+            .map(|body| collect_body_elements(body, source))
+            .unwrap_or_default(),
+        terminates: body.is_some_and(arm_terminates),
+    }
+}
+
+fn finally_arm(finally: Node<'_>, source: &str) -> BranchArmSyntax {
+    let body = finally.child_by_field_name("body").or_else(|| {
+        named_children(finally)
+            .into_iter()
+            .find(|child| child.kind() == "block")
+    });
+    BranchArmSyntax {
+        label: "finally".to_string(),
+        body: body
+            .map(|body| collect_body_elements(body, source))
+            .unwrap_or_default(),
+        terminates: body.is_some_and(arm_terminates),
+    }
+}
+
+fn catch_label(catch: Node<'_>, source: &str) -> String {
+    named_children(catch)
+        .into_iter()
+        .find(|child| child.kind() != "block")
+        .map(|child| text(child, source))
+        .unwrap_or_else(|| "unknown".to_string())
+}
+
+fn try_resource_calls(node: Node<'_>, source: &str) -> Vec<BodyElement> {
+    named_children(node)
+        .into_iter()
+        .filter(|child| !matches!(child.kind(), "block" | "catch_clause" | "finally_clause"))
+        .flat_map(|child| collect_body_elements(child, source))
+        .collect()
 }
 
 fn is_loop_statement(kind: &str) -> bool {

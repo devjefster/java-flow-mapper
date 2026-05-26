@@ -9,7 +9,7 @@ sequenceDiagram
     participant UserRepository
     participant Optional
     participant BusinessException
-    participant Unknown
+    participant ErrorCode
     participant User
     participant Boolean
     participant UpdateUserRequest
@@ -25,23 +25,19 @@ sequenceDiagram
     alt optional present
     else optional empty
     Optional->>BusinessException: <init>(...)
-    BusinessException->>Unknown: getDefaultMessage()
-    Note over Unknown: unresolved (receiver type unknown)
+    BusinessException->>ErrorCode: getDefaultMessage()
     end
     UserService->>User: getActive()
     UserService->>Boolean: equals(_)
-    Note over Boolean: external (JDK)
     UserService->>UpdateUserRequest: getEmail()
     alt Boolean.FALSE.equals(user.getActive()) && request.getEmail() != null
     UserService->>BusinessException: <init>(...)
-    BusinessException->>Unknown: getDefaultMessage()
-    Note over Unknown: unresolved (receiver type unknown)
+    BusinessException->>ErrorCode: getDefaultMessage()
     end
     UserService->>UpdateUserRequest: getEmail()
     UserService->>UpdateUserRequest: getEmail()
     UserService->>User: getEmail()
     UserService->>String: equalsIgnoreCase(_)
-    Note over String: external (JDK)
     alt request.getEmail() != null &&                 !request.getEmail().equalsIgnoreCase(user.getEmail())
     UserService->>UpdateUserRequest: getEmail()
     UserService->>UserService: validateEmailUniqueness(String)
@@ -49,31 +45,25 @@ sequenceDiagram
     alt email == null
     end
     Normalizers->>String: trim()
-    Note over String: external (JDK)
     Normalizers->>String: toLowerCase()
-    Note over String: external (JDK)
     UserService->>UserRepository: existsByEmail(String)
     Note over UserRepository: external (Spring Data JPA)
     alt repository.existsByEmail(normalized)
     UserService->>BusinessException: <init>(...)
-    BusinessException->>Unknown: getDefaultMessage()
-    Note over Unknown: unresolved (receiver type unknown)
+    BusinessException->>ErrorCode: getDefaultMessage()
     end
     UserService->>UpdateUserRequest: getEmail()
     UserService->>Normalizers: normalizeEmail(String)
     alt email == null
     end
     Normalizers->>String: trim()
-    Note over String: external (JDK)
     Normalizers->>String: toLowerCase()
-    Note over String: external (JDK)
     UserService->>User: setEmail(String)
     end
     UserService->>UpdateUserRequest: getName()
     alt request.getName() != null
     UserService->>UpdateUserRequest: getName()
     UserService->>String: trim()
-    Note over String: external (JDK)
     UserService->>User: setName(String)
     end
     UserService->>UpdateUserRequest: getAge()
@@ -81,8 +71,7 @@ sequenceDiagram
     UserService->>UpdateUserRequest: getAge()
     alt request.getAge() < 18
     UserService->>BusinessException: <init>(...)
-    BusinessException->>Unknown: getDefaultMessage()
-    Note over Unknown: unresolved (receiver type unknown)
+    BusinessException->>ErrorCode: getDefaultMessage()
     end
     UserService->>UpdateUserRequest: getAge()
     UserService->>User: setAge(Integer)
@@ -91,11 +80,9 @@ sequenceDiagram
     UserService->>UserService: activeChange(User, Boolean)
     UserService->>User: getActive()
     UserService->>Boolean: equals(_)
-    Note over Boolean: external (JDK)
     alt requestedActive == null || requestedActive.equals(user.getActive())
     end
     UserService->>Boolean: equals(_)
-    Note over Boolean: external (JDK)
     alt Boolean.TRUE.equals(requestedActive)
     end
     alt switch activeChange(user, request.getActive()) case ACTIVATE
@@ -111,6 +98,15 @@ sequenceDiagram
     else
     UserService->>UserService: requestedStatus(UpdateUserRequest)
     UserService->>UpdateUserRequest: getActive()
+    end
+    alt try
+    UserService->>UserService: recordUpdateStatus(String)
+    UserService->>String: trim()
+    else catch IllegalArgumentException ex
+    UserService->>UserService: recoverUpdateStatus(IllegalArgumentException)
+    else finally
+    UserService->>UserService: auditUpdateAttempt(User)
+    UserService->>User: getId()
     end
     UserService->>UserRepository: save(User)
     Note over UserRepository: external (Spring Data JPA)

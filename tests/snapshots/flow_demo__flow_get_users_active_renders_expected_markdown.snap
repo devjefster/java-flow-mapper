@@ -12,11 +12,11 @@ expression: stdout
 - `UserController#findActive()`
   - `UserService#findActive()` *[resolved]*
     - `UserRepository#findAll()` *[external - Spring Data JPA]*
-    - `ArrayList#<init>()` *[external - JDK]*
+    - `ArrayList#<init>()` *[external - JDK library]*
     - loop for-each `User user : users`:
       - body:
         - `User#getActive()` *[resolved]*
-        - `Boolean#equals(_)` *[external - JDK]*
+        - `Boolean#equals(_)` *[external - JDK library]*
         - if Boolean.TRUE.equals(user.getActive()):
           - `UserService#toResponse(User)` *[resolved]*
             - `User#getId()` *[resolved]*
@@ -25,15 +25,15 @@ expression: stdout
             - `User#getAge()` *[resolved]*
             - `User#getActive()` *[resolved]*
             - `UserResponse#<init>(Long, String, String, Integer, Boolean)` *[resolved]*
-          - `List#add(_)` *[external - JDK]*
-    - `List#forEach(Consumer)` *[external - JDK]*
+          - `List#add(_)` *[external - JDK library]*
+    - `List#forEach(Consumer)` *[control - traversal]*
       - loop forEach `List.forEach`:
         - body:
           - method ref `this::requireResponseEmail`:
             - `UserService#requireResponseEmail(UserResponse)` *[resolved]*
               - `UserResponse#getEmail()` *[resolved]*
               - if response.getEmail() == null: *(terminates)*
-                - `IllegalStateException#<init>(_)` *[external - JDK]*
+                - `IllegalStateException#<init>(_)` *[external - JDK library]*
 
 ## Inputs
 
@@ -41,11 +41,6 @@ expression: stdout
 
 ## Unresolved / external
 
-- `ArrayList#<init>()` - `external` (JDK)
-- `Boolean#equals(_)` - `external` (JDK)
-- `IllegalStateException#<init>(_)` - `external` (JDK)
-- `List#add(_)` - `external` (JDK)
-- `List#forEach(Consumer)` - `external` (JDK)
 - `UserRepository#findAll()` - `external` (Spring Data JPA)
 
 ## Notes

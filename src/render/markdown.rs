@@ -4,8 +4,8 @@ use std::collections::{BTreeMap, HashSet};
 use std::fmt::Write;
 
 use crate::model::{
-    BranchKind, BranchNode, CallNode, Confidence, Flow, FlowNode, Fqn, LambdaKind, LambdaNode,
-    LoopNode, ParamSource,
+    BranchKind, BranchNode, CallNode, Confidence, ExternalKind, Flow, FlowNode, Fqn, LambdaKind,
+    LambdaNode, LoopNode, ParamSource,
 };
 
 use super::common::{
@@ -213,6 +213,7 @@ fn render_branch(
             (BranchKind::Switch, label) => format!("case {label}"),
             (BranchKind::Ternary, "then") => format!("ternary {}", branch.condition_src),
             (BranchKind::Ternary, "else") => "else".to_string(),
+            (BranchKind::TryCatch, label) => label.to_string(),
             (BranchKind::Optional, label) => format!("optional {label}"),
             (BranchKind::If | BranchKind::Ternary, label) => label.to_string(),
         };
@@ -334,6 +335,9 @@ fn collect_rendered_reference(node: &CallNode, state: &mut RenderState) {
 
     match node.confidence {
         Confidence::External => {
+            if node.external_kind.as_ref() == Some(&ExternalKind::JdkLibrary) {
+                return;
+            }
             state.external.insert(
                 short_method(&node.method_fqn.0),
                 external_kind_human_label(node.external_kind.as_ref()).to_string(),

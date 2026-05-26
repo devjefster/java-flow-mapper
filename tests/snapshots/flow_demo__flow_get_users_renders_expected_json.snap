@@ -30,14 +30,14 @@ expression: stdout
           "type": "call",
           "method": "List#stream()",
           "confidence": "external",
-          "external_kind": "jdk",
+          "external_kind": "jdk-library",
           "calls": []
         },
         {
           "type": "call",
           "method": "Stream#map(Function)",
-          "confidence": "external",
-          "external_kind": "jdk",
+          "confidence": "control",
+          "control_kind": "traversal",
           "calls": [
             {
               "type": "loop",
@@ -105,7 +105,7 @@ expression: stdout
           "type": "call",
           "method": "Stream#toList()",
           "confidence": "external",
-          "external_kind": "jdk",
+          "external_kind": "jdk-library",
           "calls": []
         }
       ]

@@ -15,9 +15,8 @@ sequenceDiagram
     UserService->>UserRepository: findAll()
     Note over UserRepository: external (Spring Data JPA)
     UserService->>List: stream()
-    Note over List: external (JDK)
     UserService->>Stream: map(Function)
-    Note over Stream: external (JDK)
+    Note over Stream: control flow (traversal)
     loop stream Stream.map
     Stream->>UserService: toResponse(User)
     UserService->>User: getId()
@@ -28,7 +27,6 @@ sequenceDiagram
     UserService->>UserResponse: <init>(...)
     end
     UserService->>Stream: toList()
-    Note over Stream: external (JDK)
     %% Notes:
     %% - Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
     %% - Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.

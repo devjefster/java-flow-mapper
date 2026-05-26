@@ -13,8 +13,8 @@ use crate::spring::jpa;
 
 use super::expand::{expand_lambdas, expand_method};
 use super::external::{
-    ExpandContext, expand_external_call_children, external_kind_for, external_params,
-    is_jdk_simple, jdk_return_type,
+    ExpandContext, expand_external_call_children, external_kind_for, external_kind_for_call,
+    external_params, is_jdk_simple, jdk_return_type,
 };
 use super::node::{
     external_node, scoped, short_type, static_type_ref, strip_generics, unknown_params,
@@ -145,6 +145,7 @@ pub(super) fn resolve_call(
             )
         }
         ResolvedType::External { label, kind } => {
+            let kind = external_kind_for_call(kind, &label, &call.method_name, call.arity);
             let mut node = external_node(
                 Fqn(format!(
                     "{}#{}({})",
@@ -170,6 +171,12 @@ pub(super) fn resolve_call(
                     .any(|child| matches!(child, FlowNode::Branch(branch) if branch.kind == BranchKind::Optional))
             {
                 node.control_kind = Some(ControlKind::Optional);
+            } else if node
+                .children
+                .iter()
+                .any(|child| matches!(child, FlowNode::Loop(_)))
+            {
+                node.control_kind = Some(ControlKind::Traversal);
             }
             node
         }

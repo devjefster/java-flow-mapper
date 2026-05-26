@@ -17,11 +17,9 @@ sequenceDiagram
     UserService->>UserRepository: findAll()
     Note over UserRepository: external (Spring Data JPA)
     UserService->>ArrayList: <init>(...)
-    Note over ArrayList: external (JDK)
     loop for-each User user : users
     UserService->>User: getActive()
     UserService->>Boolean: equals(_)
-    Note over Boolean: external (JDK)
     alt Boolean.TRUE.equals(user.getActive())
     UserService->>UserService: toResponse(User)
     UserService->>User: getId()
@@ -31,17 +29,15 @@ sequenceDiagram
     UserService->>User: getActive()
     UserService->>UserResponse: <init>(...)
     UserService->>List: add(_)
-    Note over List: external (JDK)
     end
     end
     UserService->>List: forEach(Consumer)
-    Note over List: external (JDK)
+    Note over List: control flow (traversal)
     loop forEach List.forEach
     List->>UserService: requireResponseEmail(UserResponse)
     UserService->>UserResponse: getEmail()
     alt response.getEmail() == null
     UserService->>IllegalStateException: <init>(...)
-    Note over IllegalStateException: external (JDK)
     end
     end
     %% Notes:

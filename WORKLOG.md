@@ -297,4 +297,31 @@ Known deferrals:
 
 - Ternary expression result values are not represented separately from branch-arm calls.
 - Ternary arm termination remains conservative; throw expressions and richer expression semantics are deferred.
-- Try/catch flow-control elements remain deferred.
+
+## 2026-05-26 - Try/catch branch elements
+
+Implemented try/catch/finally flow-control support and added demo snapshot coverage:
+
+- Added `BranchKind::TryCatch` and reused parsed branch arms so `try`, each `catch`, and optional `finally` blocks share the existing branch expansion path.
+- Parsed `try_statement` nodes before generic recursive call collection so calls inside try/catch/finally arms no longer flatten as unconditional siblings.
+- Preserved a `try` arm, one labeled arm per catch clause such as `catch IllegalArgumentException ex`, and a `finally` arm when present.
+- Added shallow arm termination detection for try/catch/finally bodies, matching the existing if/switch termination behavior.
+- Conservatively collects calls from try-with-resources header nodes into `condition_calls` when tree-sitter exposes them outside block/catch/finally children.
+- Rendered try/catch/finally in Markdown (`try:` / `catch ...:` / `finally:`), JSON (`"kind": "try_catch"`), and Mermaid `alt try` / `else catch ...` / `else finally` blocks.
+- Added a parser unit test covering try body, catch clause, and finally body extraction.
+- Added a try/catch/finally block to the existing `PUT /users/{id}` demo update flow after the ternary status decision.
+- Refreshed the PUT endpoint Markdown, JSON, and Mermaid snapshots so the fixture now covers try/catch/finally output in all formats.
+
+Verified:
+
+- `cargo test parser::tests::parses_try_catch_finally_branches -- --nocapture`
+- `INSTA_UPDATE=always cargo test --test flow_demo flow_put_users_by_id_renders_expected`
+- `cargo fmt --check`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+- `INSTA_UPDATE=always cargo test`
+
+Known deferrals:
+
+- Exception type flow is not inferred; catch arms are structural and do not model which exceptions reach each handler.
+- Try-with-resources is only shallowly surfaced through header calls, not resource lifetime semantics.
+- Finally dominance is not modeled; JFM does not infer that finally always runs or overrides prior returns/throws.

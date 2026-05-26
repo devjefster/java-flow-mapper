@@ -3,7 +3,9 @@
 use std::collections::HashSet;
 use std::fmt::Write;
 
-use crate::model::{BranchKind, BranchNode, CallNode, Confidence, Flow, FlowNode, LoopNode};
+use crate::model::{
+    BranchKind, BranchNode, CallNode, Confidence, ExternalKind, Flow, FlowNode, LoopNode,
+};
 
 use super::common::{
     control_kind_human_label, external_kind_human_label, loop_kind_human_label,
@@ -110,7 +112,9 @@ fn render_edge(
         .unwrap();
     } else {
         match node.confidence {
-            Confidence::External => {
+            Confidence::External
+                if node.external_kind.as_ref() != Some(&ExternalKind::JdkLibrary) =>
+            {
                 writeln!(
                     out,
                     "    Note over {}: external ({})",
@@ -119,6 +123,7 @@ fn render_edge(
                 )
                 .unwrap();
             }
+            Confidence::External => {}
             Confidence::Unresolved => {
                 if let Some(note) = &node.note {
                     writeln!(out, "    Note over {callee}: unresolved ({note})").unwrap();
@@ -172,6 +177,7 @@ fn render_branch(
                 .unwrap_or("")
         ),
         BranchKind::Ternary => mermaid_condition(&branch.condition_src),
+        BranchKind::TryCatch => "try".to_string(),
         BranchKind::Optional => format!("optional {}", branch.arms[0].label),
     };
 
@@ -182,6 +188,7 @@ fn render_branch(
                 BranchKind::If => "else".to_string(),
                 BranchKind::Switch => format!("else case {}", arm.label),
                 BranchKind::Ternary => "else".to_string(),
+                BranchKind::TryCatch => format!("else {}", arm.label),
                 BranchKind::Optional => format!("else optional {}", arm.label),
             };
             writeln!(out, "    {label}").unwrap();

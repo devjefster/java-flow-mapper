@@ -149,7 +149,7 @@ fn lambda_child(
 fn implicit_no_such_element() -> Vec<FlowNode> {
     vec![FlowNode::Call(external_node(
         Fqn("NoSuchElementException#<init>()".to_string()),
-        ExternalKind::Jdk,
+        ExternalKind::JdkLibrary,
     ))]
 }
 
@@ -167,6 +167,35 @@ pub(super) fn external_kind_for(fqn: &str) -> ExternalKind {
     } else {
         ExternalKind::ThirdParty
     }
+}
+
+pub(super) fn external_kind_for_call(
+    kind: ExternalKind,
+    receiver: &str,
+    method_name: &str,
+    arity: usize,
+) -> ExternalKind {
+    if kind == ExternalKind::Jdk && is_routine_jdk_library_call(receiver, method_name, arity) {
+        ExternalKind::JdkLibrary
+    } else {
+        kind
+    }
+}
+
+fn is_routine_jdk_library_call(receiver: &str, method_name: &str, arity: usize) -> bool {
+    matches!(
+        (receiver, method_name, arity),
+        (
+            "ArrayList" | "IllegalStateException" | "RuntimeException" | "NoSuchElementException",
+            "<init>",
+            _
+        ) | ("Boolean", "equals", 1)
+            | ("List" | "Set", "add", 1)
+            | ("List" | "Set", "stream", 0)
+            | ("String", "equalsIgnoreCase", 1)
+            | ("String", "trim" | "toLowerCase", 0)
+            | ("Stream", "toList", 0)
+    )
 }
 
 pub(super) fn is_jdk_simple(raw: &str) -> bool {
@@ -320,7 +349,35 @@ mod tests {
             panic!("expected implicit throw constructor call");
         };
         assert_eq!(call.method_fqn.0, "NoSuchElementException#<init>()");
-        assert_eq!(call.external_kind, Some(ExternalKind::Jdk));
+        assert_eq!(call.external_kind, Some(ExternalKind::JdkLibrary));
+    }
+
+    #[test]
+    fn routine_jdk_calls_use_low_signal_external_kind() {
+        assert_eq!(
+            external_kind_for_call(ExternalKind::Jdk, "Boolean", "equals", 1),
+            ExternalKind::JdkLibrary
+        );
+        assert_eq!(
+            external_kind_for_call(ExternalKind::Jdk, "List", "add", 1),
+            ExternalKind::JdkLibrary
+        );
+        assert_eq!(
+            external_kind_for_call(ExternalKind::Jdk, "List", "stream", 0),
+            ExternalKind::JdkLibrary
+        );
+        assert_eq!(
+            external_kind_for_call(ExternalKind::Jdk, "Stream", "toList", 0),
+            ExternalKind::JdkLibrary
+        );
+        assert_eq!(
+            external_kind_for_call(ExternalKind::Jdk, "List", "forEach", 1),
+            ExternalKind::Jdk
+        );
+        assert_eq!(
+            external_kind_for_call(ExternalKind::ThirdParty, "Client", "send", 1),
+            ExternalKind::ThirdParty
+        );
     }
 
     #[test]

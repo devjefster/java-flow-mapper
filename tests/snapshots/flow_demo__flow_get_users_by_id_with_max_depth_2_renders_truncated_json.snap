@@ -44,13 +44,7 @@ expression: stdout
       ]
     }
   ],
-  "unresolved": [
-    {
-      "receiver_type": "unknown",
-      "method_name": "getDefaultMessage",
-      "reason": "could not determine receiver at line 12"
-    }
-  ],
+  "unresolved": [],
   "notes": [
     "Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.",
     "Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.",

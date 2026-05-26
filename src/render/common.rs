@@ -68,6 +68,7 @@ pub(super) fn single_line(source: &str) -> String {
 pub(super) fn external_kind_human_label(kind: Option<&ExternalKind>) -> &'static str {
     match kind {
         Some(ExternalKind::Jdk) => "JDK",
+        Some(ExternalKind::JdkLibrary) => "JDK library",
         Some(ExternalKind::SpringData) => "Spring Data JPA",
         Some(ExternalKind::ThirdParty) => "third party",
         Some(ExternalKind::Unknown) | None => "unknown",
@@ -77,6 +78,7 @@ pub(super) fn external_kind_human_label(kind: Option<&ExternalKind>) -> &'static
 pub(super) fn control_kind_human_label(kind: &ControlKind) -> &'static str {
     match kind {
         ControlKind::Optional => "Optional",
+        ControlKind::Traversal => "traversal",
     }
 }
 

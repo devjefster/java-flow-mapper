@@ -9,7 +9,7 @@ sequenceDiagram
     participant UserRepository
     participant Optional
     participant BusinessException
-    participant Unknown
+    participant ErrorCode
     participant User
     participant UserResponse
     UserController->>UserService: findById(Long)
@@ -21,8 +21,7 @@ sequenceDiagram
     alt optional present
     else optional empty
     Optional->>BusinessException: <init>(...)
-    BusinessException->>Unknown: getDefaultMessage()
-    Note over Unknown: unresolved (receiver type unknown)
+    BusinessException->>ErrorCode: getDefaultMessage()
     end
     UserService->>UserService: toResponse(User)
     UserService->>User: getId()

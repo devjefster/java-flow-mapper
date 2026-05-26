@@ -1,7 +1,7 @@
 use std::path::Path;
 
-use super::parse_file;
-use crate::model::{BodyElement, BranchKind, LoopKind, MethodInfo};
+use super::{ParsedFile, parse_file};
+use crate::model::{BodyElement, BranchKind, ClassKind, LoopKind, MethodInfo};
 
 #[test]
 fn parses_if_without_else_and_marks_throwing_then_arm() {
@@ -378,13 +378,91 @@ fn parses_ternary_expression_branches() {
     assert_eq!(call_name(&branch.arms[1].body[0]), "no");
 }
 
+#[test]
+fn parses_try_catch_finally_branches() {
+    let methods = parse_methods(
+        r#"
+            class Demo {
+                void guarded() {
+                    try {
+                        work();
+                    } catch (IllegalArgumentException ex) {
+                        recover(ex);
+                    } finally {
+                        cleanup();
+                    }
+                }
+            }
+            "#,
+    );
+    let method = method(&methods, "guarded");
+
+    assert_eq!(method.body.len(), 1);
+    let BodyElement::Branch(branch) = &method.body[0] else {
+        panic!("expected try/catch branch");
+    };
+    assert_eq!(branch.kind, BranchKind::TryCatch);
+    assert_eq!(branch.arms.len(), 3);
+    assert_eq!(branch.arms[0].label, "try");
+    assert_eq!(call_name(&branch.arms[0].body[0]), "work");
+    assert_eq!(branch.arms[1].label, "catch IllegalArgumentException ex");
+    assert_eq!(call_name(&branch.arms[1].body[0]), "recover");
+    assert_eq!(branch.arms[2].label, "finally");
+    assert_eq!(call_name(&branch.arms[2].body[0]), "cleanup");
+}
+
+#[test]
+fn indexes_enum_declarations_with_methods() {
+    let parsed = parse_source(
+        r#"
+            package com.example.demo.exception;
+
+            enum ErrorCode {
+                USER_NOT_FOUND("User not found");
+
+                private final String defaultMessage;
+
+                ErrorCode(String defaultMessage) {
+                    this.defaultMessage = defaultMessage;
+                }
+
+                public String getDefaultMessage() {
+                    return defaultMessage;
+                }
+            }
+            "#,
+    );
+    let class = parsed
+        .classes
+        .iter()
+        .find(|class| class.simple_name == "ErrorCode")
+        .unwrap();
+
+    assert_eq!(class.kind, ClassKind::Enum);
+    assert_eq!(class.fqn.0, "com.example.demo.exception.ErrorCode");
+    assert!(
+        class
+            .methods
+            .iter()
+            .any(|method| method.name == "getDefaultMessage")
+    );
+}
+
 fn parse_methods(source: &str) -> Vec<MethodInfo> {
+    parse_source(source)
+        .classes
+        .into_iter()
+        .next()
+        .unwrap()
+        .methods
+}
+
+fn parse_source(source: &str) -> ParsedFile {
     let mut parser = tree_sitter::Parser::new();
     let language: tree_sitter::Language = tree_sitter_java::LANGUAGE.into();
     parser.set_language(&language).unwrap();
     let tree = parser.parse(source, None).unwrap();
-    let parsed = parse_file(Path::new("Demo.java"), source, tree.root_node());
-    parsed.classes.into_iter().next().unwrap().methods
+    parse_file(Path::new("Demo.java"), source, tree.root_node())
 }
 
 fn method<'a>(methods: &'a [MethodInfo], name: &str) -> &'a MethodInfo {

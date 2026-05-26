@@ -58,14 +58,14 @@ expression: stdout
                   "type": "call",
                   "method": "String#trim()",
                   "confidence": "external",
-                  "external_kind": "jdk",
+                  "external_kind": "jdk-library",
                   "calls": []
                 },
                 {
                   "type": "call",
                   "method": "String#toLowerCase()",
                   "confidence": "external",
-                  "external_kind": "jdk",
+                  "external_kind": "jdk-library",
                   "calls": []
                 }
               ]
@@ -93,8 +93,8 @@ expression: stdout
                       "calls": [
                         {
                           "type": "call",
-                          "method": "Unknown#getDefaultMessage()",
-                          "confidence": "unresolved",
+                          "method": "com.example.demo.exception.ErrorCode#getDefaultMessage()",
+                          "confidence": "resolved",
                           "calls": []
                         }
                       ]
@@ -127,8 +127,8 @@ expression: stdout
                   "calls": [
                     {
                       "type": "call",
-                      "method": "Unknown#getDefaultMessage()",
-                      "confidence": "unresolved",
+                      "method": "com.example.demo.exception.ErrorCode#getDefaultMessage()",
+                      "confidence": "resolved",
                       "calls": []
                     }
                   ]
@@ -147,7 +147,7 @@ expression: stdout
           "type": "call",
           "method": "String#trim()",
           "confidence": "external",
-          "external_kind": "jdk",
+          "external_kind": "jdk-library",
           "calls": []
         },
         {
@@ -177,14 +177,14 @@ expression: stdout
               "type": "call",
               "method": "String#trim()",
               "confidence": "external",
-              "external_kind": "jdk",
+              "external_kind": "jdk-library",
               "calls": []
             },
             {
               "type": "call",
               "method": "String#toLowerCase()",
               "confidence": "external",
-              "external_kind": "jdk",
+              "external_kind": "jdk-library",
               "calls": []
             }
           ]
@@ -255,18 +255,7 @@ expression: stdout
       ]
     }
   ],
-  "unresolved": [
-    {
-      "receiver_type": "unknown",
-      "method_name": "getDefaultMessage",
-      "reason": "could not determine receiver at line 12"
-    },
-    {
-      "receiver_type": "unknown",
-      "method_name": "getDefaultMessage",
-      "reason": "could not determine receiver at line 12"
-    }
-  ],
+  "unresolved": [],
   "notes": [
     "Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.",
     "Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.",

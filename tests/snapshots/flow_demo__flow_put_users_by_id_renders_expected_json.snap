@@ -75,8 +75,8 @@ expression: stdout
                               "calls": [
                                 {
                                   "type": "call",
-                                  "method": "Unknown#getDefaultMessage()",
-                                  "confidence": "unresolved",
+                                  "method": "com.example.demo.exception.ErrorCode#getDefaultMessage()",
+                                  "confidence": "resolved",
                                   "calls": []
                                 }
                               ]
@@ -101,7 +101,7 @@ expression: stdout
           "type": "call",
           "method": "Boolean#equals(_)",
           "confidence": "external",
-          "external_kind": "jdk",
+          "external_kind": "jdk-library",
           "calls": []
         },
         {
@@ -126,8 +126,8 @@ expression: stdout
                   "calls": [
                     {
                       "type": "call",
-                      "method": "Unknown#getDefaultMessage()",
-                      "confidence": "unresolved",
+                      "method": "com.example.demo.exception.ErrorCode#getDefaultMessage()",
+                      "confidence": "resolved",
                       "calls": []
                     }
                   ]
@@ -158,7 +158,7 @@ expression: stdout
           "type": "call",
           "method": "String#equalsIgnoreCase(_)",
           "confidence": "external",
-          "external_kind": "jdk",
+          "external_kind": "jdk-library",
           "calls": []
         },
         {
@@ -203,14 +203,14 @@ expression: stdout
                           "type": "call",
                           "method": "String#trim()",
                           "confidence": "external",
-                          "external_kind": "jdk",
+                          "external_kind": "jdk-library",
                           "calls": []
                         },
                         {
                           "type": "call",
                           "method": "String#toLowerCase()",
                           "confidence": "external",
-                          "external_kind": "jdk",
+                          "external_kind": "jdk-library",
                           "calls": []
                         }
                       ]
@@ -238,8 +238,8 @@ expression: stdout
                               "calls": [
                                 {
                                   "type": "call",
-                                  "method": "Unknown#getDefaultMessage()",
-                                  "confidence": "unresolved",
+                                  "method": "com.example.demo.exception.ErrorCode#getDefaultMessage()",
+                                  "confidence": "resolved",
                                   "calls": []
                                 }
                               ]
@@ -277,14 +277,14 @@ expression: stdout
                       "type": "call",
                       "method": "String#trim()",
                       "confidence": "external",
-                      "external_kind": "jdk",
+                      "external_kind": "jdk-library",
                       "calls": []
                     },
                     {
                       "type": "call",
                       "method": "String#toLowerCase()",
                       "confidence": "external",
-                      "external_kind": "jdk",
+                      "external_kind": "jdk-library",
                       "calls": []
                     }
                   ]
@@ -324,7 +324,7 @@ expression: stdout
                   "type": "call",
                   "method": "String#trim()",
                   "confidence": "external",
-                  "external_kind": "jdk",
+                  "external_kind": "jdk-library",
                   "calls": []
                 },
                 {
@@ -374,8 +374,8 @@ expression: stdout
                           "calls": [
                             {
                               "type": "call",
-                              "method": "Unknown#getDefaultMessage()",
-                              "confidence": "unresolved",
+                              "method": "com.example.demo.exception.ErrorCode#getDefaultMessage()",
+                              "confidence": "resolved",
                               "calls": []
                             }
                           ]
@@ -422,7 +422,7 @@ expression: stdout
               "type": "call",
               "method": "Boolean#equals(_)",
               "confidence": "external",
-              "external_kind": "jdk",
+              "external_kind": "jdk-library",
               "calls": []
             },
             {
@@ -441,7 +441,7 @@ expression: stdout
               "type": "call",
               "method": "Boolean#equals(_)",
               "confidence": "external",
-              "external_kind": "jdk",
+              "external_kind": "jdk-library",
               "calls": []
             },
             {
@@ -548,6 +548,67 @@ expression: stdout
           ]
         },
         {
+          "type": "branch",
+          "kind": "try_catch",
+          "condition_src": "try",
+          "arms": [
+            {
+              "label": "try",
+              "terminates": false,
+              "children": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.service.UserService#recordUpdateStatus(String)",
+                  "confidence": "resolved",
+                  "scope": "intra-class",
+                  "calls": [
+                    {
+                      "type": "call",
+                      "method": "String#trim()",
+                      "confidence": "external",
+                      "external_kind": "jdk-library",
+                      "calls": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "catch IllegalArgumentException ex",
+              "terminates": false,
+              "children": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.service.UserService#recoverUpdateStatus(IllegalArgumentException)",
+                  "confidence": "resolved",
+                  "scope": "intra-class",
+                  "calls": []
+                }
+              ]
+            },
+            {
+              "label": "finally",
+              "terminates": false,
+              "children": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.service.UserService#auditUpdateAttempt(User)",
+                  "confidence": "resolved",
+                  "scope": "intra-class",
+                  "calls": [
+                    {
+                      "type": "call",
+                      "method": "com.example.demo.entity.User#getId()",
+                      "confidence": "resolved",
+                      "calls": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
           "type": "call",
           "method": "com.example.demo.repository.UserRepository#save(User)",
           "confidence": "external",
@@ -601,28 +662,7 @@ expression: stdout
       ]
     }
   ],
-  "unresolved": [
-    {
-      "receiver_type": "unknown",
-      "method_name": "getDefaultMessage",
-      "reason": "could not determine receiver at line 12"
-    },
-    {
-      "receiver_type": "unknown",
-      "method_name": "getDefaultMessage",
-      "reason": "could not determine receiver at line 12"
-    },
-    {
-      "receiver_type": "unknown",
-      "method_name": "getDefaultMessage",
-      "reason": "could not determine receiver at line 12"
-    },
-    {
-      "receiver_type": "unknown",
-      "method_name": "getDefaultMessage",
-      "reason": "could not determine receiver at line 12"
-    }
-  ],
+  "unresolved": [],
   "notes": [
     "Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.",
     "Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.",

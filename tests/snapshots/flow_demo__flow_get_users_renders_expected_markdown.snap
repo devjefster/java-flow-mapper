@@ -12,8 +12,8 @@ expression: stdout
 - `UserController#findAll()`
   - `UserService#findAll()` *[resolved]*
     - `UserRepository#findAll()` *[external - Spring Data JPA]*
-    - `List#stream()` *[external - JDK]*
-    - `Stream#map(Function)` *[external - JDK]*
+    - `List#stream()` *[external - JDK library]*
+    - `Stream#map(Function)` *[control - traversal]*
       - loop stream `Stream.map`:
         - body:
           - method ref `this::toResponse`:
@@ -24,7 +24,7 @@ expression: stdout
               - `User#getAge()` *[resolved]*
               - `User#getActive()` *[resolved]*
               - `UserResponse#<init>(Long, String, String, Integer, Boolean)` *[resolved]*
-    - `Stream#toList()` *[external - JDK]*
+    - `Stream#toList()` *[external - JDK library]*
 
 ## Inputs
 
@@ -32,9 +32,6 @@ expression: stdout
 
 ## Unresolved / external
 
-- `List#stream()` - `external` (JDK)
-- `Stream#map(Function)` - `external` (JDK)
-- `Stream#toList()` - `external` (JDK)
 - `UserRepository#findAll()` - `external` (Spring Data JPA)
 
 ## Notes
