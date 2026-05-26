@@ -1,6 +1,6 @@
 # Java Flow Mapper
 
-`jfm` is a Rust CLI for mapping Java/Spring HTTP request flows. It indexes a Java project, finds a Spring MVC endpoint, resolves the controller/service/repository call path it can see, and renders the result as Markdown, JSON, or Mermaid.
+`jfm` is a Rust CLI for mapping Java/Spring HTTP request flows. It indexes a Java project, finds a Spring MVC endpoint, resolves the controller/service/repository call path it can see, and renders the result as Markdown, JSON, or Mermaid diagrams.
 
 The project is currently a single binary crate focused on the `flow` command.
 
@@ -11,7 +11,7 @@ The project is currently a single binary crate focused on the `flow` command.
 - Resolves calls through controllers, services, fields, locals, constructors, interfaces, and Spring Data repositories.
 - Preserves visible control flow for `if`, `switch`, ternary, try/catch/finally, loops, lambdas, method references, stream traversal, and common `Optional` operations.
 - Marks unresolved and external calls instead of hiding them.
-- Renders request flows as human-readable Markdown, structured JSON, or Mermaid sequence diagrams.
+- Renders request flows as human-readable Markdown, structured JSON, Mermaid sequence diagrams, or Mermaid flowcharts.
 
 ## Requirements
 
@@ -57,11 +57,19 @@ JSON:
 cargo run -- flow demo-api/demo "GET /users/{id}" --format json
 ```
 
-Mermaid:
+Mermaid sequence diagram:
 
 ```sh
 cargo run -- flow demo-api/demo "GET /users/{id}" --format mermaid
 ```
+
+Mermaid flowchart:
+
+```sh
+cargo run -- flow demo-api/demo "GET /users/{id}" --format mermaid --diagram flowchart
+```
+
+`--diagram sequence|flowchart` only applies to Mermaid output. Sequence diagrams are the default.
 
 ### Depth Limit
 
@@ -123,6 +131,7 @@ Implemented:
 
 - `jfm flow <root> "<VERB> <PATH>"`
 - `--format markdown|json|mermaid`
+- `--diagram sequence|flowchart` for Mermaid output
 - `--max-depth N`
 - Spring MVC endpoint discovery
 - Spring Data repository method recognition for common repository base interfaces
@@ -130,6 +139,7 @@ Implemented:
 - Try/catch/finally rendering with labeled arms
 - Loop rendering with execution cardinality, labeled body arms, and split `for` init/condition/update sections
 - Lambda, method-reference, stream traversal, and `forEach` traversal rendering
+- Mermaid sequence and flowchart diagram rendering
 
 Not implemented yet:
 

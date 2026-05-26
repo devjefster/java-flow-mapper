@@ -9,7 +9,7 @@ use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
 
 use crate::flow;
-use crate::model::{Format, HttpVerb};
+use crate::model::{Diagram, Format, HttpVerb};
 use crate::parser;
 use crate::render;
 
@@ -31,6 +31,9 @@ enum Commands {
         /// Output format.
         #[arg(long, value_enum, default_value_t = Format::Markdown)]
         format: Format,
+        /// Mermaid diagram shape.
+        #[arg(long, value_enum, default_value_t = Diagram::Sequence)]
+        diagram: Diagram,
         /// Render-time depth limit for the call tree.
         #[arg(long)]
         max_depth: Option<usize>,
@@ -46,13 +49,14 @@ pub fn run() -> Result<()> {
             root,
             endpoint,
             format,
+            diagram,
             max_depth,
         } => {
             let (verb, path) = parse_endpoint(&endpoint)?;
             let index = parser::index_project(&root)
                 .with_context(|| format!("while parsing {}", root.display()))?;
             let flow = flow::build_flow(&index, verb, &path)?;
-            print!("{}", render::render(&flow, format, max_depth));
+            print!("{}", render::render(&flow, format, diagram, max_depth));
             Ok(())
         }
     }

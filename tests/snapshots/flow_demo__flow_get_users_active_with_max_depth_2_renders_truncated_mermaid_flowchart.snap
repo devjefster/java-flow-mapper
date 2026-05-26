@@ -1,0 +1,38 @@
+---
+source: tests/flow_demo.rs
+expression: stdout
+---
+```mermaid
+flowchart TD
+    n0["UserController#findActive()"]
+    n1["UserService#findActive()"]
+    n0 --> n1
+    n2["UserRepository#findAll() - external (Spring Data JPA)"]
+    n1 --> n2
+    n3["ArrayList#<init>() - external (JDK library)"]
+    n1 --> n3
+    n4["loop for-each User user : users (0..n)"]
+    n1 --> n4
+    n5["User#getActive()"]
+    n4 -->|"body"| n5
+    n6["Boolean#equals(_) - external (JDK library)"]
+    n4 -->|"body"| n6
+    n7{"if Boolean.TRUE.equals(user.getActive())"}
+    n4 -->|"body"| n7
+    n8["UserService#toResponse(User)"]
+    n7 -->|"then"| n8
+    n9["(truncated, 1 more level)"]
+    n8 --> n9
+    n10["List#add(_) - external (JDK library)"]
+    n7 -->|"then"| n10
+    n11["List#forEach(Consumer) - control flow (traversal)"]
+    n1 --> n11
+    n12["(truncated, 2 more levels)"]
+    n11 --> n12
+    %% Notes:
+    %% - Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
+    %% - Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.
+    %% - Optional present/empty behavior is rendered structurally, but JFM does not predict which arm runs for a request.
+    %% - AOP, @Transactional, @ControllerAdvice, DI qualifiers, Lombok, and Bean Validation are not modeled.
+    %% - Output truncated at depth 2 (see --max-depth).
+```

@@ -21,6 +21,15 @@ pub enum Format {
     Mermaid,
 }
 
+/// Mermaid diagram shape selected by the CLI.
+#[derive(Clone, Copy, Debug, clap::ValueEnum)]
+pub enum Diagram {
+    /// Message-oriented Mermaid sequence diagram.
+    Sequence,
+    /// Graph-oriented Mermaid flowchart.
+    Flowchart,
+}
+
 /// Fully qualified symbol name used as a stable key across indexes and flows.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Fqn(pub String);

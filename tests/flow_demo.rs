@@ -250,6 +250,33 @@ fn flow_get_users_active_renders_expected_mermaid() {
     insta::assert_snapshot!(stdout);
 }
 
+#[test]
+fn flow_get_users_active_renders_expected_mermaid_flowchart() {
+    let stdout = run_flow(
+        "GET /users/active",
+        &["--format", "mermaid", "--diagram", "flowchart"],
+    );
+
+    insta::assert_snapshot!(stdout);
+}
+
+#[test]
+fn flow_get_users_active_with_max_depth_2_renders_truncated_mermaid_flowchart() {
+    let stdout = run_flow(
+        "GET /users/active",
+        &[
+            "--format",
+            "mermaid",
+            "--diagram",
+            "flowchart",
+            "--max-depth",
+            "2",
+        ],
+    );
+
+    insta::assert_snapshot!(stdout);
+}
+
 fn run_flow(endpoint: &str, extra_args: &[&str]) -> String {
     let demo = Path::new(env!("CARGO_MANIFEST_DIR")).join("demo-api/demo");
     let mut command = Command::cargo_bin("jfm").expect("binary exists");
