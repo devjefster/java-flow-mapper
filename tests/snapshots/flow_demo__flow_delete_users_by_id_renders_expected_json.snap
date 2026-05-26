@@ -33,16 +33,18 @@ expression: stdout
           "calls": [
             {
               "type": "call",
-              "method": "com.example.demo.repository.UserRepository#findById(Long)",
-              "confidence": "external",
-              "external_kind": "spring-data",
-              "calls": []
-            },
-            {
-              "type": "call",
               "method": "Optional#orElseThrow(Supplier)",
               "confidence": "control",
               "control_kind": "optional",
+              "inputs": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.repository.UserRepository#findById(Long)",
+                  "confidence": "external",
+                  "external_kind": "spring-data",
+                  "calls": []
+                }
+              ],
               "calls": [
                 {
                   "type": "branch",
@@ -87,22 +89,26 @@ expression: stdout
           ]
         },
         {
-          "type": "call",
-          "method": "com.example.demo.entity.User#getActive()",
-          "confidence": "resolved",
-          "calls": []
-        },
-        {
-          "type": "call",
-          "method": "Boolean#equals(_)",
-          "confidence": "external",
-          "external_kind": "jdk-library",
-          "calls": []
-        },
-        {
           "type": "branch",
           "kind": "if",
           "condition_src": "Boolean.TRUE.equals(user.getActive())",
+          "condition": [
+            {
+              "type": "call",
+              "method": "Boolean#equals(_)",
+              "confidence": "external",
+              "external_kind": "jdk-library",
+              "inputs": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getActive()",
+                  "confidence": "resolved",
+                  "calls": []
+                }
+              ],
+              "calls": []
+            }
+          ],
           "arms": [
             {
               "label": "then",

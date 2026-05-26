@@ -14,7 +14,7 @@ expression: stdout
     - `UserService#findUserOrThrow(Long)` *[resolved]*
       ... (truncated, 3 more levels)
     - `UserService#toResponse(User)` *[resolved]*
-      ... (truncated, 1 more level)
+      ... (truncated, 2 more levels)
 
 ## Inputs
 

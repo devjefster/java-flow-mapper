@@ -24,10 +24,13 @@ const MAX_DEPTH: usize = 8;
 /// Errors returned while selecting or expanding an endpoint flow.
 #[derive(Debug, Error)]
 pub enum FlowError {
+    /// No endpoints found for the given verb and path.
     #[error("no endpoints found while looking for {verb} {path}")]
     NoEndpointsFound { verb: HttpVerb, path: String },
+    /// The requested endpoint was not found.
     #[error("endpoint not found for {verb} {path}")]
     EndpointNotFound { verb: HttpVerb, path: String },
+    /// The handler method for the endpoint is missing from the project index.
     #[error("handler method `{0}` was not found in the project index")]
     HandlerMissing(Fqn),
 }

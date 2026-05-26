@@ -3,13 +3,12 @@
 use std::collections::HashSet;
 use std::fmt::Write;
 
-use crate::model::{
-    BranchKind, BranchNode, CallNode, Confidence, ExternalKind, Flow, FlowNode, LoopNode,
-};
+use crate::model::{BranchKind, BranchNode, CallNode, Confidence, Flow, FlowNode, LoopNode};
 
 use super::common::{
-    control_kind_human_label, external_kind_human_label, loop_execution_label,
-    loop_kind_human_label, max_remaining_depth, single_line, truncated_marker, truncated_note,
+    control_kind_human_label, external_kind_human_label, is_low_signal_human_call,
+    loop_execution_label, loop_kind_human_label, max_remaining_depth, single_line,
+    truncated_marker, truncated_note,
 };
 
 const DEFAULT_MAX_DEPTH: usize = 5;
@@ -86,10 +85,22 @@ fn render_edge(
     max_depth: usize,
     truncated: &mut bool,
 ) {
+    if is_low_signal_human_call(node) {
+        for input in &node.inputs {
+            render_flow_node(out, caller_fqn, input, depth, max_depth, truncated);
+        }
+        for child in &node.children {
+            render_flow_node(out, caller_fqn, child, depth, max_depth, truncated);
+        }
+        return;
+    }
+
     if depth > max_depth {
         *truncated = true;
         return;
     }
+
+    render_children(out, caller_fqn, &node.inputs, depth, max_depth, truncated);
 
     let caller = class_name(caller_fqn);
     let callee = class_name(&node.method_fqn.0);
@@ -112,9 +123,7 @@ fn render_edge(
         .unwrap();
     } else {
         match node.confidence {
-            Confidence::External
-                if node.external_kind.as_ref() != Some(&ExternalKind::JdkLibrary) =>
-            {
+            Confidence::External => {
                 writeln!(
                     out,
                     "    Note over {}: external ({})",
@@ -123,7 +132,6 @@ fn render_edge(
                 )
                 .unwrap();
             }
-            Confidence::External => {}
             Confidence::Unresolved => {
                 if let Some(note) = &node.note {
                     writeln!(out, "    Note over {callee}: unresolved ({note})").unwrap();
@@ -181,6 +189,15 @@ fn render_branch(
         BranchKind::Optional => format!("optional {}", branch.arms[0].label),
     };
 
+    render_children(
+        out,
+        caller_fqn,
+        &branch.condition,
+        arm_call_depth,
+        max_depth,
+        truncated,
+    );
+
     writeln!(out, "    alt {condition}").unwrap();
     for (idx, arm) in branch.arms.iter().enumerate() {
         if idx > 0 {
@@ -193,8 +210,22 @@ fn render_branch(
             };
             writeln!(out, "    {label}").unwrap();
         }
+
+        let mut arm_out = String::new();
         for child in &arm.children {
-            render_flow_node(out, caller_fqn, child, arm_call_depth, max_depth, truncated);
+            render_flow_node(
+                &mut arm_out,
+                caller_fqn,
+                child,
+                arm_call_depth,
+                max_depth,
+                truncated,
+            );
+        }
+        if arm_out.is_empty() {
+            render_empty_block_note(out, caller_fqn, arm.terminates);
+        } else {
+            out.push_str(&arm_out);
         }
     }
     writeln!(out, "    end").unwrap();
@@ -209,7 +240,8 @@ fn render_loop(
     truncated: &mut bool,
 ) {
     writeln!(out, "    loop {}", loop_label(loop_node)).unwrap();
-    render_children(
+    let mut rendered = false;
+    rendered |= render_children(
         out,
         caller_fqn,
         &loop_node.init,
@@ -217,7 +249,7 @@ fn render_loop(
         max_depth,
         truncated,
     );
-    render_children(
+    rendered |= render_children(
         out,
         caller_fqn,
         &loop_node.condition,
@@ -226,7 +258,7 @@ fn render_loop(
         truncated,
     );
     for arm in &loop_node.arms {
-        render_children(
+        rendered |= render_children(
             out,
             caller_fqn,
             &arm.children,
@@ -235,7 +267,7 @@ fn render_loop(
             truncated,
         );
     }
-    render_children(
+    rendered |= render_children(
         out,
         caller_fqn,
         &loop_node.update,
@@ -243,6 +275,9 @@ fn render_loop(
         max_depth,
         truncated,
     );
+    if !rendered {
+        render_empty_block_note(out, caller_fqn, false);
+    }
     writeln!(out, "    end").unwrap();
 }
 
@@ -253,10 +288,22 @@ fn render_children(
     depth: usize,
     max_depth: usize,
     truncated: &mut bool,
-) {
+) -> bool {
+    let initial_len = out.len();
     for child in children {
         render_flow_node(out, caller_fqn, child, depth, max_depth, truncated);
     }
+    out.len() > initial_len
+}
+
+fn render_empty_block_note(out: &mut String, caller_fqn: &str, terminates: bool) {
+    let caller = class_name(caller_fqn);
+    let note = if terminates {
+        "terminates"
+    } else {
+        "no rendered calls"
+    };
+    writeln!(out, "    Note over {caller}: {note}").unwrap();
 }
 
 fn participants(flow: &Flow, max_depth: usize) -> Vec<String> {
@@ -282,11 +329,24 @@ fn collect_participants(
 ) {
     match node {
         FlowNode::Call(call) => {
+            if is_low_signal_human_call(call) {
+                for input in &call.inputs {
+                    collect_participants(input, depth, max_depth, participants, seen);
+                }
+                for child in &call.children {
+                    collect_participants(child, depth, max_depth, participants, seen);
+                }
+                return;
+            }
+
             if depth > max_depth {
                 return;
             }
 
             push_participant(participants, seen, class_name(&call.method_fqn.0));
+            for input in &call.inputs {
+                collect_participants(input, depth, max_depth, participants, seen);
+            }
             if depth >= max_depth {
                 return;
             }
@@ -301,6 +361,9 @@ fn collect_participants(
             }
         }
         FlowNode::Branch(branch) => {
+            for child in &branch.condition {
+                collect_participants(child, depth, max_depth, participants, seen);
+            }
             for arm in &branch.arms {
                 for child in &arm.children {
                     collect_participants(child, depth, max_depth, participants, seen);

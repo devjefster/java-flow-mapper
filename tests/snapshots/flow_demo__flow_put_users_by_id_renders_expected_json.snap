@@ -38,16 +38,18 @@ expression: stdout
           "calls": [
             {
               "type": "call",
-              "method": "com.example.demo.repository.UserRepository#findById(Long)",
-              "confidence": "external",
-              "external_kind": "spring-data",
-              "calls": []
-            },
-            {
-              "type": "call",
               "method": "Optional#orElseThrow(Supplier)",
               "confidence": "control",
               "control_kind": "optional",
+              "inputs": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.repository.UserRepository#findById(Long)",
+                  "confidence": "external",
+                  "external_kind": "spring-data",
+                  "calls": []
+                }
+              ],
               "calls": [
                 {
                   "type": "branch",
@@ -92,28 +94,32 @@ expression: stdout
           ]
         },
         {
-          "type": "call",
-          "method": "com.example.demo.entity.User#getActive()",
-          "confidence": "resolved",
-          "calls": []
-        },
-        {
-          "type": "call",
-          "method": "Boolean#equals(_)",
-          "confidence": "external",
-          "external_kind": "jdk-library",
-          "calls": []
-        },
-        {
-          "type": "call",
-          "method": "com.example.demo.dto.UpdateUserRequest#getEmail()",
-          "confidence": "resolved",
-          "calls": []
-        },
-        {
           "type": "branch",
           "kind": "if",
           "condition_src": "Boolean.FALSE.equals(user.getActive()) && request.getEmail() != null",
+          "condition": [
+            {
+              "type": "call",
+              "method": "Boolean#equals(_)",
+              "confidence": "external",
+              "external_kind": "jdk-library",
+              "inputs": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getActive()",
+                  "confidence": "resolved",
+                  "calls": []
+                }
+              ],
+              "calls": []
+            },
+            {
+              "type": "call",
+              "method": "com.example.demo.dto.UpdateUserRequest#getEmail()",
+              "confidence": "resolved",
+              "calls": []
+            }
+          ],
           "arms": [
             {
               "label": "then",
@@ -137,39 +143,22 @@ expression: stdout
           ]
         },
         {
-          "type": "call",
-          "method": "com.example.demo.dto.UpdateUserRequest#getEmail()",
-          "confidence": "resolved",
-          "calls": []
-        },
-        {
-          "type": "call",
-          "method": "com.example.demo.dto.UpdateUserRequest#getEmail()",
-          "confidence": "resolved",
-          "calls": []
-        },
-        {
-          "type": "call",
-          "method": "com.example.demo.entity.User#getEmail()",
-          "confidence": "resolved",
-          "calls": []
-        },
-        {
-          "type": "call",
-          "method": "String#equalsIgnoreCase(_)",
-          "confidence": "external",
-          "external_kind": "jdk-library",
-          "calls": []
-        },
-        {
           "type": "branch",
           "kind": "if",
           "condition_src": "request.getEmail() != null &&\n                !request.getEmail().equalsIgnoreCase(user.getEmail())",
-          "arms": [
+          "condition": [
             {
-              "label": "then",
-              "terminates": false,
-              "children": [
+              "type": "call",
+              "method": "com.example.demo.dto.UpdateUserRequest#getEmail()",
+              "confidence": "resolved",
+              "calls": []
+            },
+            {
+              "type": "call",
+              "method": "String#equalsIgnoreCase(_)",
+              "confidence": "external",
+              "external_kind": "jdk-library",
+              "inputs": [
                 {
                   "type": "call",
                   "method": "com.example.demo.dto.UpdateUserRequest#getEmail()",
@@ -178,9 +167,32 @@ expression: stdout
                 },
                 {
                   "type": "call",
+                  "method": "com.example.demo.entity.User#getEmail()",
+                  "confidence": "resolved",
+                  "calls": []
+                }
+              ],
+              "calls": []
+            }
+          ],
+          "arms": [
+            {
+              "label": "then",
+              "terminates": false,
+              "children": [
+                {
+                  "type": "call",
                   "method": "com.example.demo.service.UserService#validateEmailUniqueness(String)",
                   "confidence": "resolved",
                   "scope": "intra-class",
+                  "inputs": [
+                    {
+                      "type": "call",
+                      "method": "com.example.demo.dto.UpdateUserRequest#getEmail()",
+                      "confidence": "resolved",
+                      "calls": []
+                    }
+                  ],
                   "calls": [
                     {
                       "type": "call",
@@ -201,31 +213,35 @@ expression: stdout
                         },
                         {
                           "type": "call",
-                          "method": "String#trim()",
-                          "confidence": "external",
-                          "external_kind": "jdk-library",
-                          "calls": []
-                        },
-                        {
-                          "type": "call",
                           "method": "String#toLowerCase()",
                           "confidence": "external",
                           "external_kind": "jdk-library",
+                          "inputs": [
+                            {
+                              "type": "call",
+                              "method": "String#trim()",
+                              "confidence": "external",
+                              "external_kind": "jdk-library",
+                              "calls": []
+                            }
+                          ],
                           "calls": []
                         }
                       ]
                     },
                     {
-                      "type": "call",
-                      "method": "com.example.demo.repository.UserRepository#existsByEmail(String)",
-                      "confidence": "external",
-                      "external_kind": "spring-data",
-                      "calls": []
-                    },
-                    {
                       "type": "branch",
                       "kind": "if",
                       "condition_src": "repository.existsByEmail(normalized)",
+                      "condition": [
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.repository.UserRepository#existsByEmail(String)",
+                          "confidence": "external",
+                          "external_kind": "spring-data",
+                          "calls": []
+                        }
+                      ],
                       "arms": [
                         {
                           "label": "then",
@@ -252,63 +268,71 @@ expression: stdout
                 },
                 {
                   "type": "call",
-                  "method": "com.example.demo.dto.UpdateUserRequest#getEmail()",
-                  "confidence": "resolved",
-                  "calls": []
-                },
-                {
-                  "type": "call",
-                  "method": "com.example.demo.util.Normalizers#normalizeEmail(String)",
-                  "confidence": "resolved",
-                  "calls": [
-                    {
-                      "type": "branch",
-                      "kind": "if",
-                      "condition_src": "email == null",
-                      "arms": [
-                        {
-                          "label": "then",
-                          "terminates": true,
-                          "children": []
-                        }
-                      ]
-                    },
-                    {
-                      "type": "call",
-                      "method": "String#trim()",
-                      "confidence": "external",
-                      "external_kind": "jdk-library",
-                      "calls": []
-                    },
-                    {
-                      "type": "call",
-                      "method": "String#toLowerCase()",
-                      "confidence": "external",
-                      "external_kind": "jdk-library",
-                      "calls": []
-                    }
-                  ]
-                },
-                {
-                  "type": "call",
                   "method": "com.example.demo.entity.User#setEmail(String)",
                   "confidence": "resolved",
+                  "inputs": [
+                    {
+                      "type": "call",
+                      "method": "com.example.demo.util.Normalizers#normalizeEmail(String)",
+                      "confidence": "resolved",
+                      "inputs": [
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.dto.UpdateUserRequest#getEmail()",
+                          "confidence": "resolved",
+                          "calls": []
+                        }
+                      ],
+                      "calls": [
+                        {
+                          "type": "branch",
+                          "kind": "if",
+                          "condition_src": "email == null",
+                          "arms": [
+                            {
+                              "label": "then",
+                              "terminates": true,
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "type": "call",
+                          "method": "String#toLowerCase()",
+                          "confidence": "external",
+                          "external_kind": "jdk-library",
+                          "inputs": [
+                            {
+                              "type": "call",
+                              "method": "String#trim()",
+                              "confidence": "external",
+                              "external_kind": "jdk-library",
+                              "calls": []
+                            }
+                          ],
+                          "calls": []
+                        }
+                      ]
+                    }
+                  ],
                   "calls": []
                 }
               ]
             }
           ]
-        },
-        {
-          "type": "call",
-          "method": "com.example.demo.dto.UpdateUserRequest#getName()",
-          "confidence": "resolved",
-          "calls": []
         },
         {
           "type": "branch",
           "kind": "if",
           "condition_src": "request.getName() != null",
+          "condition": [
+            {
+              "type": "call",
+              "method": "com.example.demo.dto.UpdateUserRequest#getName()",
+              "confidence": "resolved",
+              "calls": []
+            }
+          ],
           "arms": [
             {
               "label": "then",
@@ -316,21 +340,25 @@ expression: stdout
               "children": [
                 {
                   "type": "call",
-                  "method": "com.example.demo.dto.UpdateUserRequest#getName()",
-                  "confidence": "resolved",
-                  "calls": []
-                },
-                {
-                  "type": "call",
-                  "method": "String#trim()",
-                  "confidence": "external",
-                  "external_kind": "jdk-library",
-                  "calls": []
-                },
-                {
-                  "type": "call",
                   "method": "com.example.demo.entity.User#setName(String)",
                   "confidence": "resolved",
+                  "inputs": [
+                    {
+                      "type": "call",
+                      "method": "String#trim()",
+                      "confidence": "external",
+                      "external_kind": "jdk-library",
+                      "inputs": [
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.dto.UpdateUserRequest#getName()",
+                          "confidence": "resolved",
+                          "calls": []
+                        }
+                      ],
+                      "calls": []
+                    }
+                  ],
                   "calls": []
                 }
               ]
@@ -338,30 +366,34 @@ expression: stdout
           ]
         },
         {
-          "type": "call",
-          "method": "com.example.demo.dto.UpdateUserRequest#getAge()",
-          "confidence": "resolved",
-          "calls": []
-        },
-        {
           "type": "branch",
           "kind": "if",
           "condition_src": "request.getAge() != null",
+          "condition": [
+            {
+              "type": "call",
+              "method": "com.example.demo.dto.UpdateUserRequest#getAge()",
+              "confidence": "resolved",
+              "calls": []
+            }
+          ],
           "arms": [
             {
               "label": "then",
               "terminates": false,
               "children": [
                 {
-                  "type": "call",
-                  "method": "com.example.demo.dto.UpdateUserRequest#getAge()",
-                  "confidence": "resolved",
-                  "calls": []
-                },
-                {
                   "type": "branch",
                   "kind": "if",
                   "condition_src": "request.getAge() < 18",
+                  "condition": [
+                    {
+                      "type": "call",
+                      "method": "com.example.demo.dto.UpdateUserRequest#getAge()",
+                      "confidence": "resolved",
+                      "calls": []
+                    }
+                  ],
                   "arms": [
                     {
                       "label": "then",
@@ -386,73 +418,17 @@ expression: stdout
                 },
                 {
                   "type": "call",
-                  "method": "com.example.demo.dto.UpdateUserRequest#getAge()",
-                  "confidence": "resolved",
-                  "calls": []
-                },
-                {
-                  "type": "call",
                   "method": "com.example.demo.entity.User#setAge(Integer)",
                   "confidence": "resolved",
+                  "inputs": [
+                    {
+                      "type": "call",
+                      "method": "com.example.demo.dto.UpdateUserRequest#getAge()",
+                      "confidence": "resolved",
+                      "calls": []
+                    }
+                  ],
                   "calls": []
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "call",
-          "method": "com.example.demo.dto.UpdateUserRequest#getActive()",
-          "confidence": "resolved",
-          "calls": []
-        },
-        {
-          "type": "call",
-          "method": "com.example.demo.service.UserService#activeChange(User, Boolean)",
-          "confidence": "resolved",
-          "scope": "intra-class",
-          "calls": [
-            {
-              "type": "call",
-              "method": "com.example.demo.entity.User#getActive()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
-              "method": "Boolean#equals(_)",
-              "confidence": "external",
-              "external_kind": "jdk-library",
-              "calls": []
-            },
-            {
-              "type": "branch",
-              "kind": "if",
-              "condition_src": "requestedActive == null || requestedActive.equals(user.getActive())",
-              "arms": [
-                {
-                  "label": "then",
-                  "terminates": true,
-                  "children": []
-                }
-              ]
-            },
-            {
-              "type": "call",
-              "method": "Boolean#equals(_)",
-              "confidence": "external",
-              "external_kind": "jdk-library",
-              "calls": []
-            },
-            {
-              "type": "branch",
-              "kind": "if",
-              "condition_src": "Boolean.TRUE.equals(requestedActive)",
-              "arms": [
-                {
-                  "label": "then",
-                  "terminates": true,
-                  "children": []
                 }
               ]
             }
@@ -462,6 +438,74 @@ expression: stdout
           "type": "branch",
           "kind": "switch",
           "condition_src": "activeChange(user, request.getActive())",
+          "condition": [
+            {
+              "type": "call",
+              "method": "com.example.demo.service.UserService#activeChange(User, Boolean)",
+              "confidence": "resolved",
+              "scope": "intra-class",
+              "inputs": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.dto.UpdateUserRequest#getActive()",
+                  "confidence": "resolved",
+                  "calls": []
+                }
+              ],
+              "calls": [
+                {
+                  "type": "branch",
+                  "kind": "if",
+                  "condition_src": "requestedActive == null || requestedActive.equals(user.getActive())",
+                  "condition": [
+                    {
+                      "type": "call",
+                      "method": "Boolean#equals(_)",
+                      "confidence": "external",
+                      "external_kind": "jdk-library",
+                      "inputs": [
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.entity.User#getActive()",
+                          "confidence": "resolved",
+                          "calls": []
+                        }
+                      ],
+                      "calls": []
+                    }
+                  ],
+                  "arms": [
+                    {
+                      "label": "then",
+                      "terminates": true,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "type": "branch",
+                  "kind": "if",
+                  "condition_src": "Boolean.TRUE.equals(requestedActive)",
+                  "condition": [
+                    {
+                      "type": "call",
+                      "method": "Boolean#equals(_)",
+                      "confidence": "external",
+                      "external_kind": "jdk-library",
+                      "calls": []
+                    }
+                  ],
+                  "arms": [
+                    {
+                      "label": "then",
+                      "terminates": true,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
           "arms": [
             {
               "label": "ACTIVATE",
@@ -495,15 +539,17 @@ expression: stdout
           ]
         },
         {
-          "type": "call",
-          "method": "com.example.demo.dto.UpdateUserRequest#getActive()",
-          "confidence": "resolved",
-          "calls": []
-        },
-        {
           "type": "branch",
           "kind": "ternary",
           "condition_src": "request.getActive() == null",
+          "condition": [
+            {
+              "type": "call",
+              "method": "com.example.demo.dto.UpdateUserRequest#getActive()",
+              "confidence": "resolved",
+              "calls": []
+            }
+          ],
           "arms": [
             {
               "label": "then",
@@ -623,38 +669,40 @@ expression: stdout
           "calls": [
             {
               "type": "call",
-              "method": "com.example.demo.entity.User#getId()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
-              "method": "com.example.demo.entity.User#getName()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
-              "method": "com.example.demo.entity.User#getEmail()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
-              "method": "com.example.demo.entity.User#getAge()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
-              "method": "com.example.demo.entity.User#getActive()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
               "method": "com.example.demo.dto.UserResponse#<init>(Long, String, String, Integer, Boolean)",
               "confidence": "resolved",
+              "inputs": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getId()",
+                  "confidence": "resolved",
+                  "calls": []
+                },
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getName()",
+                  "confidence": "resolved",
+                  "calls": []
+                },
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getEmail()",
+                  "confidence": "resolved",
+                  "calls": []
+                },
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getAge()",
+                  "confidence": "resolved",
+                  "calls": []
+                },
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getActive()",
+                  "confidence": "resolved",
+                  "calls": []
+                }
+              ],
               "calls": []
             }
           ]

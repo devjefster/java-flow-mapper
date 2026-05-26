@@ -55,22 +55,24 @@ pub fn collect_body_elements_into(node: Node<'_>, source: &str, elements: &mut V
         return;
     }
 
-    for child in named_children(node) {
-        collect_body_elements_into(child, source, elements);
-    }
-
     match node.kind() {
         "method_invocation" => {
             if let Some(call) = parse_method_invocation(node, source) {
                 elements.push(BodyElement::Call(call));
             }
+            return;
         }
         "object_creation_expression" => {
             if let Some(call) = parse_constructor_invocation(node, source) {
                 elements.push(BodyElement::Call(call));
             }
+            return;
         }
         _ => {}
+    }
+
+    for child in named_children(node) {
+        collect_body_elements_into(child, source, elements);
     }
 }
 
@@ -518,11 +520,16 @@ fn arm_terminates(node: Node<'_>) -> bool {
 /// Parse a Java method invocation into a call site.
 pub fn parse_method_invocation(node: Node<'_>, source: &str) -> Option<CallSite> {
     let method_name = node_text(node.child_by_field_name("name"), source)?;
+    let receiver_node = node
+        .child_by_field_name("object")
+        .or_else(|| node.child_by_field_name("scope"));
     let receiver = node
         .child_by_field_name("object")
         .or_else(|| node.child_by_field_name("scope"))
         .map(|receiver| receiver_kind(receiver, source))
         .unwrap_or(ReceiverKind::This);
+    let arguments_node = node.child_by_field_name("arguments");
+    let inputs = call_inputs(receiver_node, arguments_node, source);
     let lambdas = node
         .child_by_field_name("arguments")
         .map(|arguments| lambda_arguments(arguments, source))
@@ -536,6 +543,7 @@ pub fn parse_method_invocation(node: Node<'_>, source: &str) -> Option<CallSite>
         receiver,
         method_name,
         arity,
+        inputs,
         lambdas,
         line: line(node),
     })
@@ -551,14 +559,37 @@ pub fn parse_constructor_invocation(node: Node<'_>, source: &str) -> Option<Call
         .child_by_field_name("arguments")
         .map(|arguments| count_args(&text(arguments, source)))
         .unwrap_or(0);
+    let inputs = node
+        .child_by_field_name("arguments")
+        .map(|arguments| collect_body_elements(arguments, source))
+        .unwrap_or_default();
 
     Some(CallSite {
         receiver: ReceiverKind::Constructor(strip_generics(&ty).to_string()),
         method_name: "<init>".to_string(),
         arity,
+        inputs,
         lambdas: Vec::new(),
         line: line(node),
     })
+}
+
+fn call_inputs(
+    receiver_node: Option<Node<'_>>,
+    arguments_node: Option<Node<'_>>,
+    source: &str,
+) -> Vec<BodyElement> {
+    let mut inputs = Vec::new();
+    if let Some(receiver) = receiver_node
+        && receiver.kind() == "method_invocation"
+        && let Some(call) = parse_method_invocation(receiver, source)
+    {
+        inputs.push(BodyElement::Call(call));
+    }
+    if let Some(arguments) = arguments_node {
+        inputs.extend(collect_body_elements(arguments, source));
+    }
+    inputs
 }
 
 /// Collect local variable declarations visible within a method body.

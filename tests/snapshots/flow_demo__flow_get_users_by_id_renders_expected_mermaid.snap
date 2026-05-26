@@ -6,12 +6,12 @@ expression: stdout
 sequenceDiagram
     participant UserController
     participant UserService
-    participant UserRepository
     participant Optional
+    participant UserRepository
     participant BusinessException
     participant ErrorCode
-    participant User
     participant UserResponse
+    participant User
     UserController->>UserService: findById(Long)
     UserService->>UserService: findUserOrThrow(Long)
     UserService->>UserRepository: findById(Long)
@@ -19,6 +19,7 @@ sequenceDiagram
     UserService->>Optional: orElseThrow(Supplier)
     Note over Optional: control flow (Optional)
     alt optional present
+    Note over Optional: no rendered calls
     else optional empty
     Optional->>BusinessException: <init>(...)
     BusinessException->>ErrorCode: getDefaultMessage()

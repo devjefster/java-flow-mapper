@@ -6,12 +6,11 @@ expression: stdout
 sequenceDiagram
     participant UserController
     participant UserService
-    participant UserRepository
     participant Optional
+    participant UserRepository
     participant BusinessException
     participant ErrorCode
     participant User
-    participant Boolean
     UserController->>UserService: delete(Long)
     UserService->>UserService: findUserOrThrow(Long)
     UserService->>UserRepository: findById(Long)
@@ -19,12 +18,12 @@ sequenceDiagram
     UserService->>Optional: orElseThrow(Supplier)
     Note over Optional: control flow (Optional)
     alt optional present
+    Note over Optional: no rendered calls
     else optional empty
     Optional->>BusinessException: <init>(...)
     BusinessException->>ErrorCode: getDefaultMessage()
     end
     UserService->>User: getActive()
-    UserService->>Boolean: equals(_)
     alt Boolean.TRUE.equals(user.getActive())
     UserService->>BusinessException: <init>(...)
     BusinessException->>ErrorCode: getDefaultMessage()

@@ -4,19 +4,19 @@ expression: stdout
 ---
 ```mermaid
 flowchart TD
-    n0[["UserController#findActive()"]]
-    n1[["UserService#findActive()"]]
+    n0[["UserController#findAll()"]]
+    n1[["UserService#findAll()"]]
     n0 --> n1
-    n2(["UserRepository#findAll() - external (Spring Data JPA)"])
-    n1 --> n2
-    n3{{"loop for-each User user : users (0..n)"}}
-    n2 --> n3
-    n4{"if Boolean.TRUE.equals(user.getActive())"}
-    n5[["User#getActive()"]]
-    n3 -->|"body"| n5
-    n5 -->|"condition"| n4
+    n2{{"Stream#map(Function) - control flow (traversal)"}}
+    n3(["UserRepository#findAll() - external (Spring Data JPA)"])
+    n1 --> n3
+    n3 -->|"input"| n2
+    n4{{"loop stream Stream.map (0..n)"}}
+    n2 --> n4
+    n5["method ref: this::toResponse"]
+    n4 -->|"body"| n5
     n6[["UserService#toResponse(User)"]]
-    n4 -->|"then"| n6
+    n5 --> n6
     n7[["UserResponse#<init>(Long, String, String, Integer, Boolean)"]]
     n8[["User#getId()"]]
     n6 --> n8
@@ -33,23 +33,7 @@ flowchart TD
     n12[["User#getActive()"]]
     n6 --> n12
     n12 -->|"input"| n7
-    n7 -->|"next"| n3
-    n4 -->|"next"| n3
-    n13{{"List#forEach(Consumer) - control flow (traversal)"}}
-    n3 --> n13
-    n14{{"loop forEach List.forEach (0..n)"}}
-    n13 --> n14
-    n15["method ref: this::requireResponseEmail"]
-    n14 -->|"body"| n15
-    n16[["UserService#requireResponseEmail(UserResponse)"]]
-    n15 --> n16
-    n17{"if response.getEmail() == null"}
-    n18[["UserResponse#getEmail()"]]
-    n16 --> n18
-    n18 -->|"condition"| n17
-    n19(["terminates"])
-    n17 -->|"terminates"| n19
-    n17 -->|"next"| n14
+    n7 -->|"next"| n4
     %% Notes:
     %% - Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
     %% - Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.

@@ -10,7 +10,7 @@ sequenceDiagram
     UserService->>UserService: findUserOrThrow(Long)
     Note over UserService: (truncated, 3 more levels)
     UserService->>UserService: toResponse(User)
-    Note over UserService: (truncated, 1 more level)
+    Note over UserService: (truncated, 2 more levels)
     %% Notes:
     %% - Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
     %% - Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.

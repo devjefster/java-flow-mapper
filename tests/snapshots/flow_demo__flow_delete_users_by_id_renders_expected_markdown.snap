@@ -12,16 +12,17 @@ expression: stdout
 - `UserController#delete(Long)`
   - `UserService#delete(Long)` *[resolved]*
     - `UserService#findUserOrThrow(Long)` *[resolved]*
-      - `UserRepository#findById(Long)` *[external - Spring Data JPA]*
       - `Optional#orElseThrow(Supplier)` *[control - Optional]*
+        - inputs:
+          - `UserRepository#findById(Long)` *[external - Spring Data JPA]*
         - optional present:
         - optional empty: *(terminates)*
           - lambda `() -> new BusinessException(ErrorCode.USER_NOT_FOUND)`:
             - `BusinessException#<init>(ErrorCode)` *[resolved]*
               - `ErrorCode#getDefaultMessage()` *[resolved]*
-    - `User#getActive()` *[resolved]*
-    - `Boolean#equals(_)` *[external - JDK library]*
     - if Boolean.TRUE.equals(user.getActive()): *(terminates)*
+      - condition:
+        - `User#getActive()` *[resolved]*
       - `BusinessException#<init>(ErrorCode)` *(see above)*
     - `UserRepository#delete(User)` *[external - Spring Data JPA]*
 

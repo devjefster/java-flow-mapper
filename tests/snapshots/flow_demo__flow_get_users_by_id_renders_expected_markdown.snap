@@ -12,20 +12,22 @@ expression: stdout
 - `UserController#findById(Long)`
   - `UserService#findById(Long)` *[resolved]*
     - `UserService#findUserOrThrow(Long)` *[resolved]*
-      - `UserRepository#findById(Long)` *[external - Spring Data JPA]*
       - `Optional#orElseThrow(Supplier)` *[control - Optional]*
+        - inputs:
+          - `UserRepository#findById(Long)` *[external - Spring Data JPA]*
         - optional present:
         - optional empty: *(terminates)*
           - lambda `() -> new BusinessException(ErrorCode.USER_NOT_FOUND)`:
             - `BusinessException#<init>(ErrorCode)` *[resolved]*
               - `ErrorCode#getDefaultMessage()` *[resolved]*
     - `UserService#toResponse(User)` *[resolved]*
-      - `User#getId()` *[resolved]*
-      - `User#getName()` *[resolved]*
-      - `User#getEmail()` *[resolved]*
-      - `User#getAge()` *[resolved]*
-      - `User#getActive()` *[resolved]*
       - `UserResponse#<init>(Long, String, String, Integer, Boolean)` *[resolved]*
+        - inputs:
+          - `User#getId()` *[resolved]*
+          - `User#getName()` *[resolved]*
+          - `User#getEmail()` *[resolved]*
+          - `User#getAge()` *[resolved]*
+          - `User#getActive()` *[resolved]*
 
 ## Inputs
 

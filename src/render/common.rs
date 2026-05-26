@@ -1,14 +1,17 @@
 //! Shared renderer helpers for depth accounting and labels.
 
-use crate::model::{CallNode, ControlKind, ExternalKind, FlowNode, LoopExecution, LoopKind};
+use crate::model::{
+    CallNode, Confidence, ControlKind, ExternalKind, FlowNode, LoopExecution, LoopKind,
+};
 
 /// Render-time `max_depth` trims output only; it is independent from
 /// `flow::MAX_DEPTH`, which protects graph construction from runaway recursion.
 /// Control nodes (branches, loops, lambda wrappers, and arms) do not count
 /// toward render depth; only calls do.
 pub(super) fn max_remaining_depth(node: &CallNode) -> usize {
-    node.children
+    node.inputs
         .iter()
+        .chain(&node.children)
         .map(flow_node_remaining_depth)
         .max()
         .unwrap_or(0)
@@ -24,9 +27,9 @@ fn flow_node_remaining_depth(node: &FlowNode) -> usize {
             .max()
             .unwrap_or(0),
         FlowNode::Branch(branch) => branch
-            .arms
+            .condition
             .iter()
-            .flat_map(|arm| &arm.children)
+            .chain(branch.arms.iter().flat_map(|arm| &arm.children))
             .map(flow_node_remaining_depth)
             .max()
             .unwrap_or(0),
@@ -53,6 +56,12 @@ pub(super) fn truncated_marker(remaining_levels: usize) -> String {
         "levels"
     };
     format!("(truncated, {remaining_levels} more {suffix})")
+}
+
+pub(super) fn is_low_signal_human_call(node: &CallNode) -> bool {
+    node.control_kind.is_none()
+        && matches!(node.confidence, Confidence::External)
+        && node.external_kind.as_ref() == Some(&ExternalKind::JdkLibrary)
 }
 
 pub(super) fn short_method(fqn: &str) -> String {

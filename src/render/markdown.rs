@@ -4,14 +4,14 @@ use std::collections::{BTreeMap, HashSet};
 use std::fmt::Write;
 
 use crate::model::{
-    BranchKind, BranchNode, CallNode, Confidence, ExternalKind, Flow, FlowNode, Fqn, LambdaKind,
-    LambdaNode, LoopNode, ParamSource,
+    BranchKind, BranchNode, CallNode, Confidence, Flow, FlowNode, Fqn, LambdaKind, LambdaNode,
+    LoopNode, ParamSource,
 };
 
 use super::common::{
-    control_kind_human_label, external_kind_human_label, loop_execution_label,
-    loop_kind_human_label, max_remaining_depth, short_method, single_line, truncated_marker,
-    truncated_note,
+    control_kind_human_label, external_kind_human_label, is_low_signal_human_call,
+    loop_execution_label, loop_kind_human_label, max_remaining_depth, short_method, single_line,
+    truncated_marker, truncated_note,
 };
 
 const DEFAULT_MAX_DEPTH: usize = 5;
@@ -106,6 +106,16 @@ fn render_call_node(
     state: &mut RenderState,
 ) {
     let indent = "  ".repeat(indent_depth);
+    if !root && is_low_signal_human_call(node) {
+        for input in &node.inputs {
+            render_flow_node(out, input, indent_depth, call_depth, max_depth, state);
+        }
+        for child in &node.children {
+            render_flow_node(out, child, indent_depth, call_depth, max_depth, state);
+        }
+        return;
+    }
+
     write!(out, "{}- `{}`", indent, short_method(&node.method_fqn.0)).unwrap();
     if !root && !node.children.is_empty() && state.expanded_with_children.contains(&node.method_fqn)
     {
@@ -123,6 +133,16 @@ fn render_call_node(
     writeln!(out).unwrap();
 
     collect_rendered_reference(node, state);
+
+    render_relation_section(
+        out,
+        "inputs",
+        &node.inputs,
+        indent_depth,
+        call_depth,
+        max_depth,
+        state,
+    );
 
     if !node.children.is_empty() && call_depth >= max_depth {
         state.truncated = true;
@@ -206,6 +226,7 @@ fn render_branch(
     state: &mut RenderState,
 ) {
     let indent = "  ".repeat(indent_depth);
+    let mut rendered_condition = false;
     for arm in &branch.arms {
         let header = match (branch.kind, arm.label.as_str()) {
             (BranchKind::If, "then") => format!("if {}", branch.condition_src),
@@ -224,6 +245,19 @@ fn render_branch(
         }
         writeln!(out).unwrap();
 
+        if !rendered_condition {
+            render_relation_section(
+                out,
+                "condition",
+                &branch.condition,
+                indent_depth,
+                arm_call_depth,
+                max_depth,
+                state,
+            );
+            rendered_condition = true;
+        }
+
         for child in &arm.children {
             render_flow_node(
                 out,
@@ -234,6 +268,26 @@ fn render_branch(
                 state,
             );
         }
+    }
+}
+
+fn render_relation_section(
+    out: &mut String,
+    label: &str,
+    children: &[FlowNode],
+    indent_depth: usize,
+    call_depth: usize,
+    max_depth: usize,
+    state: &mut RenderState,
+) {
+    if children.is_empty() {
+        return;
+    }
+
+    let indent = "  ".repeat(indent_depth + 1);
+    writeln!(out, "{indent}- {label}:").unwrap();
+    for child in children {
+        render_flow_node(out, child, indent_depth + 2, call_depth, max_depth, state);
     }
 }
 
@@ -348,7 +402,7 @@ fn collect_rendered_reference(node: &CallNode, state: &mut RenderState) {
 
     match node.confidence {
         Confidence::External => {
-            if node.external_kind.as_ref() == Some(&ExternalKind::JdkLibrary) {
+            if is_low_signal_human_call(node) {
                 return;
             }
             state.external.insert(
@@ -533,6 +587,7 @@ mod tests {
             control_kind: None,
             scope: None,
             note: note.map(str::to_string),
+            inputs: Vec::new(),
             children,
         }
     }

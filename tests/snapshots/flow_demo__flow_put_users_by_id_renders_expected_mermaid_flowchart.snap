@@ -1,0 +1,177 @@
+---
+source: tests/flow_demo.rs
+expression: stdout
+---
+```mermaid
+flowchart TD
+    n0[["UserController#update(Long, UpdateUserRequest)"]]
+    n1[["UserService#update(Long, UpdateUserRequest)"]]
+    n0 --> n1
+    n2[["UserService#findUserOrThrow(Long)"]]
+    n1 --> n2
+    n3{{"Optional#orElseThrow(Supplier) - control flow (Optional)"}}
+    n4(["UserRepository#findById(Long) - external (Spring Data JPA)"])
+    n2 --> n4
+    n4 -->|"input"| n3
+    n5{"optional"}
+    n3 --> n5
+    n6["lambda: () -> new BusinessException(ErrorCode.USER_NOT_FOUND)"]
+    n5 -->|"empty terminates"| n6
+    n7[["BusinessException#<init>(ErrorCode)"]]
+    n6 --> n7
+    n8[["ErrorCode#getDefaultMessage()"]]
+    n7 --> n8
+    n9(["terminates"])
+    n8 -->|"terminates"| n9
+    n10{"if Boolean.FALSE.equals(user.getActive()) && request.getEmail() != null"}
+    n11[["User#getActive()"]]
+    n5 --> n11
+    n12[["UpdateUserRequest#getEmail()"]]
+    n11 --> n12
+    n12 -->|"condition"| n10
+    n13[["BusinessException#<init>(ErrorCode)"]]
+    n10 -->|"then terminates"| n13
+    n14[["ErrorCode#getDefaultMessage()"]]
+    n13 --> n14
+    n15(["terminates"])
+    n14 -->|"terminates"| n15
+    n16{"if request.getEmail() != null &&                 !request.getEmail().equalsIgnoreCase(user.getEmail())"}
+    n17[["UpdateUserRequest#getEmail()"]]
+    n10 --> n17
+    n18[["UpdateUserRequest#getEmail()"]]
+    n17 --> n18
+    n19[["User#getEmail()"]]
+    n18 --> n19
+    n19 -->|"condition"| n16
+    n20[["UserService#validateEmailUniqueness(String)"]]
+    n21[["UpdateUserRequest#getEmail()"]]
+    n16 -->|"then"| n21
+    n21 -->|"input"| n20
+    n22[["Normalizers#normalizeEmail(String)"]]
+    n20 --> n22
+    n23{"if email == null"}
+    n22 --> n23
+    n24(["terminates"])
+    n23 -->|"then terminates"| n24
+    n25{"if repository.existsByEmail(normalized)"}
+    n26(["UserRepository#existsByEmail(String) - external (Spring Data JPA)"])
+    n23 --> n26
+    n26 -->|"condition"| n25
+    n27[["BusinessException#<init>(ErrorCode)"]]
+    n25 -->|"then terminates"| n27
+    n28[["ErrorCode#getDefaultMessage()"]]
+    n27 --> n28
+    n29(["terminates"])
+    n28 -->|"terminates"| n29
+    n30[["User#setEmail(String)"]]
+    n31[["Normalizers#normalizeEmail(String)"]]
+    n32[["UpdateUserRequest#getEmail()"]]
+    n25 --> n32
+    n32 -->|"input"| n31
+    n33{"if email == null"}
+    n31 --> n33
+    n34(["terminates"])
+    n33 -->|"then terminates"| n34
+    n33 -->|"input"| n30
+    n35{"if request.getName() != null"}
+    n36[["UpdateUserRequest#getName()"]]
+    n30 --> n36
+    n16 --> n36
+    n36 -->|"condition"| n35
+    n37[["User#setName(String)"]]
+    n38[["UpdateUserRequest#getName()"]]
+    n35 -->|"then"| n38
+    n38 -->|"input"| n37
+    n39{"if request.getAge() != null"}
+    n40[["UpdateUserRequest#getAge()"]]
+    n37 --> n40
+    n35 --> n40
+    n40 -->|"condition"| n39
+    n41{"if request.getAge() < 18"}
+    n42[["UpdateUserRequest#getAge()"]]
+    n39 -->|"then"| n42
+    n42 -->|"condition"| n41
+    n43[["BusinessException#<init>(ErrorCode)"]]
+    n41 -->|"then terminates"| n43
+    n44[["ErrorCode#getDefaultMessage()"]]
+    n43 --> n44
+    n45(["terminates"])
+    n44 -->|"terminates"| n45
+    n46[["User#setAge(Integer)"]]
+    n47[["UpdateUserRequest#getAge()"]]
+    n41 --> n47
+    n47 -->|"input"| n46
+    n48{"switch activeChange(user, request.getActive())"}
+    n49[["UserService#activeChange(User, Boolean)"]]
+    n50[["UpdateUserRequest#getActive()"]]
+    n46 --> n50
+    n39 --> n50
+    n50 -->|"input"| n49
+    n51{"if requestedActive == null || requestedActive.equals(user.getActive())"}
+    n52[["User#getActive()"]]
+    n49 --> n52
+    n52 -->|"condition"| n51
+    n53(["terminates"])
+    n51 -->|"then terminates"| n53
+    n54{"if Boolean.TRUE.equals(requestedActive)"}
+    n51 -->|"condition"| n54
+    n55(["terminates"])
+    n54 -->|"then terminates"| n55
+    n54 -->|"condition"| n48
+    n56[["User#setActive(Boolean)"]]
+    n48 -->|"case ACTIVATE"| n56
+    n57[["User#setActive(Boolean)"]]
+    n48 -->|"case DEACTIVATE"| n57
+    n58{"ternary request.getActive() == null"}
+    n59[["UpdateUserRequest#getActive()"]]
+    n56 --> n59
+    n57 --> n59
+    n48 --> n59
+    n59 -->|"condition"| n58
+    n60[["UserService#unchangedStatus(User)"]]
+    n58 -->|"then"| n60
+    n61[["User#getActive()"]]
+    n60 --> n61
+    n62[["UserService#requestedStatus(UpdateUserRequest)"]]
+    n58 -->|"else"| n62
+    n63[["UpdateUserRequest#getActive()"]]
+    n62 --> n63
+    n64{"try/catch"}
+    n61 --> n64
+    n63 --> n64
+    n65[["UserService#recordUpdateStatus(String)"]]
+    n64 -->|"try"| n65
+    n66[["UserService#recoverUpdateStatus(IllegalArgumentException)"]]
+    n64 -->|"catch IllegalArgumentException ex"| n66
+    n67[["UserService#auditUpdateAttempt(User)"]]
+    n64 -->|"finally"| n67
+    n68[["User#getId()"]]
+    n67 --> n68
+    n69(["UserRepository#save(User) - external (Spring Data JPA)"])
+    n65 --> n69
+    n66 --> n69
+    n68 --> n69
+    n70[["UserService#toResponse(User)"]]
+    n69 --> n70
+    n71[["UserResponse#<init>(Long, String, String, Integer, Boolean)"]]
+    n72[["User#getId()"]]
+    n70 --> n72
+    n72 -->|"input"| n71
+    n73[["User#getName()"]]
+    n70 --> n73
+    n73 -->|"input"| n71
+    n74[["User#getEmail()"]]
+    n70 --> n74
+    n74 -->|"input"| n71
+    n75[["User#getAge()"]]
+    n70 --> n75
+    n75 -->|"input"| n71
+    n76[["User#getActive()"]]
+    n70 --> n76
+    n76 -->|"input"| n71
+    %% Notes:
+    %% - Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
+    %% - Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.
+    %% - Optional present/empty behavior is rendered structurally, but JFM does not predict which arm runs for a request.
+    %% - AOP, @Transactional, @ControllerAdvice, DI qualifiers, Lombok, and Bean Validation are not modeled.
+```

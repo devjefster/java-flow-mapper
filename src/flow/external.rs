@@ -116,6 +116,7 @@ fn optional_branch(ctx: &mut ExpandContext<'_, '_>, call: &CallSite) -> Option<B
     Some(BranchNode {
         kind: BranchKind::Optional,
         condition_src: optional_condition(&call.method_name).to_string(),
+        condition: Vec::new(),
         arms,
     })
 }
@@ -482,6 +483,7 @@ mod tests {
             receiver: ReceiverKind::TypeName("Optional".to_string()),
             method_name: method_name.to_string(),
             arity,
+            inputs: Vec::new(),
             lambdas,
             line: 1,
         }
@@ -492,6 +494,7 @@ mod tests {
             receiver: ReceiverKind::TypeName("Stream".to_string()),
             method_name: method_name.to_string(),
             arity: 1,
+            inputs: Vec::new(),
             lambdas,
             line: 1,
         }
@@ -502,6 +505,7 @@ mod tests {
             receiver: ReceiverKind::TypeName("List".to_string()),
             method_name: method_name.to_string(),
             arity: 1,
+            inputs: Vec::new(),
             lambdas,
             line: 1,
         }

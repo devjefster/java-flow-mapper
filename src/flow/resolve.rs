@@ -11,7 +11,7 @@ use crate::model::{
 };
 use crate::spring::jpa;
 
-use super::expand::{expand_lambdas, expand_method};
+use super::expand::{expand_body, expand_lambdas, expand_method};
 use super::external::{
     ExpandContext, expand_external_call_children, external_kind_for, external_kind_for_call,
     external_params, is_jdk_simple, jdk_return_type,
@@ -38,7 +38,7 @@ pub(super) fn resolve_call(
                 method_name: call.method_name.clone(),
                 reason: format!("could not determine receiver at line {}", call.line),
             });
-            return unresolved_node(
+            let mut node = unresolved_node(
                 Fqn(format!(
                     "Unknown#{}({})",
                     call.method_name,
@@ -46,6 +46,16 @@ pub(super) fn resolve_call(
                 )),
                 Some("receiver type unknown".to_string()),
             );
+            let mut ctx = ExpandContext {
+                index,
+                owner,
+                caller,
+                unresolved,
+                stack,
+                depth,
+            };
+            attach_inputs(&mut node, call, &mut ctx);
+            return node;
         }
     };
 
@@ -78,6 +88,7 @@ pub(super) fn resolve_call(
                         stack,
                         depth,
                     };
+                    attach_inputs(&mut node, call, &mut ctx);
                     attach_lambdas(&mut node, call, &mut ctx);
                     return node;
                 }
@@ -98,6 +109,7 @@ pub(super) fn resolve_call(
                     stack,
                     depth,
                 };
+                attach_inputs(&mut node, call, &mut ctx);
                 attach_lambdas(&mut node, call, &mut ctx);
                 return scoped(call, node);
             }
@@ -125,6 +137,7 @@ pub(super) fn resolve_call(
                     stack,
                     depth,
                 };
+                attach_inputs(&mut node, call, &mut ctx);
                 attach_lambdas(&mut node, call, &mut ctx);
                 return node;
             }
@@ -134,7 +147,7 @@ pub(super) fn resolve_call(
                 method_name: call.method_name.clone(),
                 reason: "no method matched by name and arity".to_string(),
             });
-            unresolved_node(
+            let mut node = unresolved_node(
                 Fqn(format!(
                     "{}#{}({})",
                     receiver_class.fqn.0,
@@ -142,7 +155,17 @@ pub(super) fn resolve_call(
                     unknown_params(call.arity)
                 )),
                 Some("no method matched".to_string()),
-            )
+            );
+            let mut ctx = ExpandContext {
+                index,
+                owner,
+                caller,
+                unresolved,
+                stack,
+                depth,
+            };
+            attach_inputs(&mut node, call, &mut ctx);
+            node
         }
         ResolvedType::External { label, kind } => {
             let kind = external_kind_for_call(kind, &label, &call.method_name, call.arity);
@@ -163,6 +186,7 @@ pub(super) fn resolve_call(
                 stack,
                 depth,
             };
+            attach_inputs(&mut node, call, &mut ctx);
             node.children = expand_external_call_children(&mut ctx, call, &label);
             if label == "Optional"
                 && node
@@ -181,6 +205,18 @@ pub(super) fn resolve_call(
             node
         }
     }
+}
+
+fn attach_inputs(node: &mut CallNode, call: &CallSite, ctx: &mut ExpandContext<'_, '_>) {
+    node.inputs = expand_body(
+        ctx.index,
+        ctx.owner,
+        ctx.caller,
+        &call.inputs,
+        ctx.unresolved,
+        ctx.stack,
+        ctx.depth.saturating_sub(1),
+    );
 }
 
 fn attach_lambdas(node: &mut CallNode, call: &CallSite, ctx: &mut ExpandContext<'_, '_>) {

@@ -33,16 +33,18 @@ expression: stdout
           "calls": [
             {
               "type": "call",
-              "method": "com.example.demo.repository.UserRepository#findById(Long)",
-              "confidence": "external",
-              "external_kind": "spring-data",
-              "calls": []
-            },
-            {
-              "type": "call",
               "method": "Optional#orElseThrow(Supplier)",
               "confidence": "control",
               "control_kind": "optional",
+              "inputs": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.repository.UserRepository#findById(Long)",
+                  "confidence": "external",
+                  "external_kind": "spring-data",
+                  "calls": []
+                }
+              ],
               "calls": [
                 {
                   "type": "branch",
@@ -94,38 +96,40 @@ expression: stdout
           "calls": [
             {
               "type": "call",
-              "method": "com.example.demo.entity.User#getId()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
-              "method": "com.example.demo.entity.User#getName()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
-              "method": "com.example.demo.entity.User#getEmail()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
-              "method": "com.example.demo.entity.User#getAge()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
-              "method": "com.example.demo.entity.User#getActive()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
               "method": "com.example.demo.dto.UserResponse#<init>(Long, String, String, Integer, Boolean)",
               "confidence": "resolved",
+              "inputs": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getId()",
+                  "confidence": "resolved",
+                  "calls": []
+                },
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getName()",
+                  "confidence": "resolved",
+                  "calls": []
+                },
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getEmail()",
+                  "confidence": "resolved",
+                  "calls": []
+                },
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getAge()",
+                  "confidence": "resolved",
+                  "calls": []
+                },
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getActive()",
+                  "confidence": "resolved",
+                  "calls": []
+                }
+              ],
               "calls": []
             }
           ]

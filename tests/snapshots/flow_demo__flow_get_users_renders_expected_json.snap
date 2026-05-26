@@ -21,98 +21,106 @@ expression: stdout
       "calls": [
         {
           "type": "call",
-          "method": "com.example.demo.repository.UserRepository#findAll()",
-          "confidence": "external",
-          "external_kind": "spring-data",
-          "calls": []
-        },
-        {
-          "type": "call",
-          "method": "List#stream()",
+          "method": "Stream#toList()",
           "confidence": "external",
           "external_kind": "jdk-library",
-          "calls": []
-        },
-        {
-          "type": "call",
-          "method": "Stream#map(Function)",
-          "confidence": "control",
-          "control_kind": "traversal",
-          "calls": [
+          "inputs": [
             {
-              "type": "loop",
-              "kind": "stream",
-              "source": "Stream.map",
-              "execution": "0..n",
-              "init": [],
-              "condition": [],
-              "arms": [
+              "type": "call",
+              "method": "Stream#map(Function)",
+              "confidence": "control",
+              "control_kind": "traversal",
+              "inputs": [
                 {
-                  "label": "body",
-                  "children": [
+                  "type": "call",
+                  "method": "List#stream()",
+                  "confidence": "external",
+                  "external_kind": "jdk-library",
+                  "inputs": [
                     {
-                      "type": "lambda",
-                      "kind": "method_ref",
-                      "source": "this::toResponse",
+                      "type": "call",
+                      "method": "com.example.demo.repository.UserRepository#findAll()",
+                      "confidence": "external",
+                      "external_kind": "spring-data",
+                      "calls": []
+                    }
+                  ],
+                  "calls": []
+                }
+              ],
+              "calls": [
+                {
+                  "type": "loop",
+                  "kind": "stream",
+                  "source": "Stream.map",
+                  "execution": "0..n",
+                  "init": [],
+                  "condition": [],
+                  "arms": [
+                    {
+                      "label": "body",
                       "children": [
                         {
-                          "type": "call",
-                          "method": "com.example.demo.service.UserService#toResponse(User)",
-                          "confidence": "resolved",
-                          "scope": "intra-class",
-                          "calls": [
+                          "type": "lambda",
+                          "kind": "method_ref",
+                          "source": "this::toResponse",
+                          "children": [
                             {
                               "type": "call",
-                              "method": "com.example.demo.entity.User#getId()",
+                              "method": "com.example.demo.service.UserService#toResponse(User)",
                               "confidence": "resolved",
-                              "calls": []
-                            },
-                            {
-                              "type": "call",
-                              "method": "com.example.demo.entity.User#getName()",
-                              "confidence": "resolved",
-                              "calls": []
-                            },
-                            {
-                              "type": "call",
-                              "method": "com.example.demo.entity.User#getEmail()",
-                              "confidence": "resolved",
-                              "calls": []
-                            },
-                            {
-                              "type": "call",
-                              "method": "com.example.demo.entity.User#getAge()",
-                              "confidence": "resolved",
-                              "calls": []
-                            },
-                            {
-                              "type": "call",
-                              "method": "com.example.demo.entity.User#getActive()",
-                              "confidence": "resolved",
-                              "calls": []
-                            },
-                            {
-                              "type": "call",
-                              "method": "com.example.demo.dto.UserResponse#<init>(Long, String, String, Integer, Boolean)",
-                              "confidence": "resolved",
-                              "calls": []
+                              "scope": "intra-class",
+                              "calls": [
+                                {
+                                  "type": "call",
+                                  "method": "com.example.demo.dto.UserResponse#<init>(Long, String, String, Integer, Boolean)",
+                                  "confidence": "resolved",
+                                  "inputs": [
+                                    {
+                                      "type": "call",
+                                      "method": "com.example.demo.entity.User#getId()",
+                                      "confidence": "resolved",
+                                      "calls": []
+                                    },
+                                    {
+                                      "type": "call",
+                                      "method": "com.example.demo.entity.User#getName()",
+                                      "confidence": "resolved",
+                                      "calls": []
+                                    },
+                                    {
+                                      "type": "call",
+                                      "method": "com.example.demo.entity.User#getEmail()",
+                                      "confidence": "resolved",
+                                      "calls": []
+                                    },
+                                    {
+                                      "type": "call",
+                                      "method": "com.example.demo.entity.User#getAge()",
+                                      "confidence": "resolved",
+                                      "calls": []
+                                    },
+                                    {
+                                      "type": "call",
+                                      "method": "com.example.demo.entity.User#getActive()",
+                                      "confidence": "resolved",
+                                      "calls": []
+                                    }
+                                  ],
+                                  "calls": []
+                                }
+                              ]
                             }
                           ]
                         }
                       ]
                     }
-                  ]
+                  ],
+                  "update": []
                 }
-              ],
-              "update": []
+              ]
             }
-          ]
-        },
-        {
-          "type": "call",
-          "method": "Stream#toList()",
-          "confidence": "external",
-          "external_kind": "jdk-library",
+          ],
           "calls": []
         }
       ]

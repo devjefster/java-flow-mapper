@@ -11,33 +11,34 @@ expression: stdout
 
 - `UserController#create(CreateUserRequest)`
   - `UserService#create(CreateUserRequest)` *[resolved]*
-    - `CreateUserRequest#getEmail()` *[resolved]*
     - `UserService#validateEmailUniqueness(String)` *[resolved]*
+      - inputs:
+        - `CreateUserRequest#getEmail()` *[resolved]*
       - `Normalizers#normalizeEmail(String)` *[resolved]*
         - if email == null: *(terminates)*
-        - `String#trim()` *[external - JDK library]*
-        - `String#toLowerCase()` *[external - JDK library]*
-      - `UserRepository#existsByEmail(String)` *[external - Spring Data JPA]*
       - if repository.existsByEmail(normalized): *(terminates)*
+        - condition:
+          - `UserRepository#existsByEmail(String)` *[external - Spring Data JPA]*
         - `BusinessException#<init>(ErrorCode)` *[resolved]*
           - `ErrorCode#getDefaultMessage()` *[resolved]*
-    - `CreateUserRequest#getAge()` *[resolved]*
     - if request.getAge() < 18: *(terminates)*
+      - condition:
+        - `CreateUserRequest#getAge()` *[resolved]*
       - `BusinessException#<init>(ErrorCode)` *(see above)*
-    - `CreateUserRequest#getName()` *[resolved]*
-    - `String#trim()` *[external - JDK library]*
-    - `CreateUserRequest#getEmail()` *[resolved]*
-    - `Normalizers#normalizeEmail(String)` *(see above)*
-    - `CreateUserRequest#getAge()` *[resolved]*
     - `User#<init>(String, String, Integer, Boolean)` *[resolved]*
+      - inputs:
+        - `CreateUserRequest#getName()` *[resolved]*
+        - `Normalizers#normalizeEmail(String)` *(see above)*
+        - `CreateUserRequest#getAge()` *[resolved]*
     - `UserRepository#save(User)` *[external - Spring Data JPA]*
     - `UserService#toResponse(User)` *[resolved]*
-      - `User#getId()` *[resolved]*
-      - `User#getName()` *[resolved]*
-      - `User#getEmail()` *[resolved]*
-      - `User#getAge()` *[resolved]*
-      - `User#getActive()` *[resolved]*
       - `UserResponse#<init>(Long, String, String, Integer, Boolean)` *[resolved]*
+        - inputs:
+          - `User#getId()` *[resolved]*
+          - `User#getName()` *[resolved]*
+          - `User#getEmail()` *[resolved]*
+          - `User#getAge()` *[resolved]*
+          - `User#getActive()` *[resolved]*
 
 ## Inputs
 

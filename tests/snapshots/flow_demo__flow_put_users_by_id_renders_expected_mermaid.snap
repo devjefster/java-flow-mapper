@@ -6,14 +6,12 @@ expression: stdout
 sequenceDiagram
     participant UserController
     participant UserService
-    participant UserRepository
     participant Optional
+    participant UserRepository
     participant BusinessException
     participant ErrorCode
     participant User
-    participant Boolean
     participant UpdateUserRequest
-    participant String
     participant Normalizers
     participant UserResponse
     UserController->>UserService: update(Long, UpdateUserRequest)
@@ -23,12 +21,12 @@ sequenceDiagram
     UserService->>Optional: orElseThrow(Supplier)
     Note over Optional: control flow (Optional)
     alt optional present
+    Note over Optional: no rendered calls
     else optional empty
     Optional->>BusinessException: <init>(...)
     BusinessException->>ErrorCode: getDefaultMessage()
     end
     UserService->>User: getActive()
-    UserService->>Boolean: equals(_)
     UserService->>UpdateUserRequest: getEmail()
     alt Boolean.FALSE.equals(user.getActive()) && request.getEmail() != null
     UserService->>BusinessException: <init>(...)
@@ -37,15 +35,13 @@ sequenceDiagram
     UserService->>UpdateUserRequest: getEmail()
     UserService->>UpdateUserRequest: getEmail()
     UserService->>User: getEmail()
-    UserService->>String: equalsIgnoreCase(_)
     alt request.getEmail() != null &&                 !request.getEmail().equalsIgnoreCase(user.getEmail())
     UserService->>UpdateUserRequest: getEmail()
     UserService->>UserService: validateEmailUniqueness(String)
     UserService->>Normalizers: normalizeEmail(String)
     alt email == null
+    Note over Normalizers: terminates
     end
-    Normalizers->>String: trim()
-    Normalizers->>String: toLowerCase()
     UserService->>UserRepository: existsByEmail(String)
     Note over UserRepository: external (Spring Data JPA)
     alt repository.existsByEmail(normalized)
@@ -55,15 +51,13 @@ sequenceDiagram
     UserService->>UpdateUserRequest: getEmail()
     UserService->>Normalizers: normalizeEmail(String)
     alt email == null
+    Note over Normalizers: terminates
     end
-    Normalizers->>String: trim()
-    Normalizers->>String: toLowerCase()
     UserService->>User: setEmail(String)
     end
     UserService->>UpdateUserRequest: getName()
     alt request.getName() != null
     UserService->>UpdateUserRequest: getName()
-    UserService->>String: trim()
     UserService->>User: setName(String)
     end
     UserService->>UpdateUserRequest: getAge()
@@ -79,17 +73,18 @@ sequenceDiagram
     UserService->>UpdateUserRequest: getActive()
     UserService->>UserService: activeChange(User, Boolean)
     UserService->>User: getActive()
-    UserService->>Boolean: equals(_)
     alt requestedActive == null || requestedActive.equals(user.getActive())
+    Note over UserService: terminates
     end
-    UserService->>Boolean: equals(_)
     alt Boolean.TRUE.equals(requestedActive)
+    Note over UserService: terminates
     end
     alt switch activeChange(user, request.getActive()) case ACTIVATE
     UserService->>User: setActive(Boolean)
     else case DEACTIVATE
     UserService->>User: setActive(Boolean)
     else case UNCHANGED
+    Note over UserService: no rendered calls
     end
     UserService->>UpdateUserRequest: getActive()
     alt request.getActive() == null
@@ -101,7 +96,6 @@ sequenceDiagram
     end
     alt try
     UserService->>UserService: recordUpdateStatus(String)
-    UserService->>String: trim()
     else catch IllegalArgumentException ex
     UserService->>UserService: recoverUpdateStatus(IllegalArgumentException)
     else finally

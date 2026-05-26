@@ -8,7 +8,6 @@ sequenceDiagram
     participant UserService
     participant CreateUserRequest
     participant Normalizers
-    participant String
     participant UserRepository
     participant BusinessException
     participant ErrorCode
@@ -19,9 +18,8 @@ sequenceDiagram
     UserService->>UserService: validateEmailUniqueness(String)
     UserService->>Normalizers: normalizeEmail(String)
     alt email == null
+    Note over Normalizers: terminates
     end
-    Normalizers->>String: trim()
-    Normalizers->>String: toLowerCase()
     UserService->>UserRepository: existsByEmail(String)
     Note over UserRepository: external (Spring Data JPA)
     alt repository.existsByEmail(normalized)
@@ -34,13 +32,11 @@ sequenceDiagram
     BusinessException->>ErrorCode: getDefaultMessage()
     end
     UserService->>CreateUserRequest: getName()
-    UserService->>String: trim()
     UserService->>CreateUserRequest: getEmail()
     UserService->>Normalizers: normalizeEmail(String)
     alt email == null
+    Note over Normalizers: terminates
     end
-    Normalizers->>String: trim()
-    Normalizers->>String: toLowerCase()
     UserService->>CreateUserRequest: getAge()
     UserService->>User: <init>(...)
     UserService->>UserRepository: save(User)

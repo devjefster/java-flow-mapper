@@ -38,6 +38,16 @@ fn flow_get_users_by_id_renders_expected_mermaid() {
 }
 
 #[test]
+fn flow_get_users_by_id_renders_expected_mermaid_flowchart() {
+    let stdout = run_flow(
+        "GET /users/{id}",
+        &["--format", "mermaid", "--diagram", "flowchart"],
+    );
+
+    insta::assert_snapshot!(stdout);
+}
+
+#[test]
 fn flow_post_users_renders_expected_markdown() {
     let stdout = run_flow("POST /users", &[]);
 
@@ -68,6 +78,16 @@ fn flow_post_users_renders_expected_json() {
 #[test]
 fn flow_post_users_renders_expected_mermaid() {
     let stdout = run_flow("POST /users", &["--format", "mermaid"]);
+
+    insta::assert_snapshot!(stdout);
+}
+
+#[test]
+fn flow_post_users_renders_expected_mermaid_flowchart() {
+    let stdout = run_flow(
+        "POST /users",
+        &["--format", "mermaid", "--diagram", "flowchart"],
+    );
 
     insta::assert_snapshot!(stdout);
 }
@@ -108,6 +128,16 @@ fn flow_get_users_renders_expected_mermaid() {
 }
 
 #[test]
+fn flow_get_users_renders_expected_mermaid_flowchart() {
+    let stdout = run_flow(
+        "GET /users",
+        &["--format", "mermaid", "--diagram", "flowchart"],
+    );
+
+    insta::assert_snapshot!(stdout);
+}
+
+#[test]
 fn flow_put_users_by_id_renders_expected_markdown() {
     let stdout = run_flow("PUT /users/{id}", &[]);
 
@@ -143,6 +173,16 @@ fn flow_put_users_by_id_renders_expected_mermaid() {
 }
 
 #[test]
+fn flow_put_users_by_id_renders_expected_mermaid_flowchart() {
+    let stdout = run_flow(
+        "PUT /users/{id}",
+        &["--format", "mermaid", "--diagram", "flowchart"],
+    );
+
+    insta::assert_snapshot!(stdout);
+}
+
+#[test]
 fn flow_delete_users_by_id_renders_expected_markdown() {
     let stdout = run_flow("DELETE /users/{id}", &[]);
 
@@ -173,6 +213,16 @@ fn flow_delete_users_by_id_renders_expected_json() {
 #[test]
 fn flow_delete_users_by_id_renders_expected_mermaid() {
     let stdout = run_flow("DELETE /users/{id}", &["--format", "mermaid"]);
+
+    insta::assert_snapshot!(stdout);
+}
+
+#[test]
+fn flow_delete_users_by_id_renders_expected_mermaid_flowchart() {
+    let stdout = run_flow(
+        "DELETE /users/{id}",
+        &["--format", "mermaid", "--diagram", "flowchart"],
+    );
 
     insta::assert_snapshot!(stdout);
 }

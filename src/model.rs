@@ -284,6 +284,7 @@ pub struct CallSite {
     pub receiver: ReceiverKind,
     pub method_name: String,
     pub arity: usize,
+    pub inputs: Vec<BodyElement>,
     pub lambdas: Vec<LambdaSyntax>,
     pub line: u32,
 }
@@ -340,6 +341,7 @@ pub struct CallNode {
     pub control_kind: Option<ControlKind>,
     pub scope: Option<Scope>,
     pub note: Option<String>,
+    pub inputs: Vec<FlowNode>,
     pub children: Vec<FlowNode>,
 }
 
@@ -369,6 +371,7 @@ pub struct LambdaNode {
 pub struct BranchNode {
     pub kind: BranchKind,
     pub condition_src: String,
+    pub condition: Vec<FlowNode>,
     pub arms: Vec<Arm>,
 }
 

@@ -113,7 +113,11 @@ fn separates_calls_inside_condition_from_then_arm() {
         branch.condition_src,
         "Boolean.TRUE.equals(user.getActive())"
     );
-    assert_eq!(condition_call_names, vec!["getActive", "equals"]);
+    assert_eq!(condition_call_names, vec!["equals"]);
+    assert_eq!(
+        call_input_names(&branch.condition_calls[0]),
+        vec!["getActive"]
+    );
     assert_eq!(call_name(&branch.then_arm[0]), "delete");
 }
 
@@ -142,9 +146,43 @@ fn skips_lambda_body_inside_condition() {
         .iter()
         .map(call_name)
         .collect::<Vec<_>>();
-    assert!(condition_call_names.contains(&"stream"));
-    assert!(condition_call_names.contains(&"anyMatch"));
+    assert_eq!(condition_call_names, vec!["anyMatch"]);
+    assert_eq!(call_input_names(&branch.condition_calls[0]), vec!["stream"]);
     assert!(!condition_call_names.contains(&"check"));
+}
+
+#[test]
+fn attaches_argument_expression_calls_to_owning_call() {
+    let methods = parse_methods(
+        r#"
+            class Demo {
+                void create(CreateUserRequest request) {
+                    validateEmailUniqueness(request.getEmail());
+                    new User(
+                        request.getName().trim(),
+                        Normalizers.normalizeEmail(request.getEmail()),
+                        request.getAge(),
+                        true
+                    );
+                }
+            }
+            "#,
+    );
+    let method = method(&methods, "create");
+
+    assert_eq!(method.body.len(), 2);
+    let validate = call(&method.body[0]);
+    assert_eq!(validate.method_name, "validateEmailUniqueness");
+    assert_eq!(call_input_names(&method.body[0]), vec!["getEmail"]);
+
+    let constructor = call(&method.body[1]);
+    assert_eq!(constructor.method_name, "<init>");
+    assert_eq!(
+        call_input_names(&method.body[1]),
+        vec!["trim", "normalizeEmail", "getAge"]
+    );
+    assert_eq!(call_input_names(&constructor.inputs[0]), vec!["getName"]);
+    assert_eq!(call_input_names(&constructor.inputs[1]), vec!["getEmail"]);
 }
 
 #[test]
@@ -496,4 +534,15 @@ fn call_name(element: &BodyElement) -> &str {
         BodyElement::Branch(_) => "branch",
         BodyElement::Loop(_) => "loop",
     }
+}
+
+fn call(element: &BodyElement) -> &crate::model::CallSite {
+    let BodyElement::Call(call) = element else {
+        panic!("expected call");
+    };
+    call
+}
+
+fn call_input_names(element: &BodyElement) -> Vec<&str> {
+    call(element).inputs.iter().map(call_name).collect()
 }

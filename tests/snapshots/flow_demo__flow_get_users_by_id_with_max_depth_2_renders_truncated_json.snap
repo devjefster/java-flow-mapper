@@ -38,7 +38,7 @@ expression: stdout
           "method": "com.example.demo.service.UserService#toResponse(User)",
           "confidence": "resolved",
           "scope": "intra-class",
-          "truncated": 1,
+          "truncated": 2,
           "calls": []
         }
       ]

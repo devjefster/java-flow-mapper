@@ -111,6 +111,8 @@ struct CallDto<'a> {
     scope: Option<&'static str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     truncated: Option<usize>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    inputs: Vec<FlowNodeDto<'a>>,
     calls: Vec<FlowNodeDto<'a>>,
 }
 
@@ -118,6 +120,8 @@ struct CallDto<'a> {
 struct BranchDto<'a> {
     kind: &'static str,
     condition_src: &'a str,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    condition: Vec<FlowNodeDto<'a>>,
     arms: Vec<ArmDto<'a>>,
 }
 
@@ -236,6 +240,7 @@ fn call_node_dto<'a>(
         control_kind: node.control_kind.as_ref().map(control_kind_json_label),
         scope: node.scope.as_ref().map(scope_label),
         truncated: should_truncate.then(|| max_remaining_depth(node)),
+        inputs: flow_node_dtos(&node.inputs, depth, max_depth, truncated),
         calls: if should_truncate {
             Vec::new()
         } else {
@@ -253,6 +258,7 @@ fn branch_node_dto<'a>(
     BranchDto {
         kind: branch_kind_json_label(branch.kind),
         condition_src: &branch.condition_src,
+        condition: flow_node_dtos(&branch.condition, arm_call_depth, max_depth, truncated),
         arms: branch
             .arms
             .iter()

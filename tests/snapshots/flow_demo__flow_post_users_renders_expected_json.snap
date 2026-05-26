@@ -27,15 +27,17 @@ expression: stdout
       "calls": [
         {
           "type": "call",
-          "method": "com.example.demo.dto.CreateUserRequest#getEmail()",
-          "confidence": "resolved",
-          "calls": []
-        },
-        {
-          "type": "call",
           "method": "com.example.demo.service.UserService#validateEmailUniqueness(String)",
           "confidence": "resolved",
           "scope": "intra-class",
+          "inputs": [
+            {
+              "type": "call",
+              "method": "com.example.demo.dto.CreateUserRequest#getEmail()",
+              "confidence": "resolved",
+              "calls": []
+            }
+          ],
           "calls": [
             {
               "type": "call",
@@ -56,31 +58,35 @@ expression: stdout
                 },
                 {
                   "type": "call",
-                  "method": "String#trim()",
-                  "confidence": "external",
-                  "external_kind": "jdk-library",
-                  "calls": []
-                },
-                {
-                  "type": "call",
                   "method": "String#toLowerCase()",
                   "confidence": "external",
                   "external_kind": "jdk-library",
+                  "inputs": [
+                    {
+                      "type": "call",
+                      "method": "String#trim()",
+                      "confidence": "external",
+                      "external_kind": "jdk-library",
+                      "calls": []
+                    }
+                  ],
                   "calls": []
                 }
               ]
             },
             {
-              "type": "call",
-              "method": "com.example.demo.repository.UserRepository#existsByEmail(String)",
-              "confidence": "external",
-              "external_kind": "spring-data",
-              "calls": []
-            },
-            {
               "type": "branch",
               "kind": "if",
               "condition_src": "repository.existsByEmail(normalized)",
+              "condition": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.repository.UserRepository#existsByEmail(String)",
+                  "confidence": "external",
+                  "external_kind": "spring-data",
+                  "calls": []
+                }
+              ],
               "arms": [
                 {
                   "label": "then",
@@ -106,15 +112,17 @@ expression: stdout
           ]
         },
         {
-          "type": "call",
-          "method": "com.example.demo.dto.CreateUserRequest#getAge()",
-          "confidence": "resolved",
-          "calls": []
-        },
-        {
           "type": "branch",
           "kind": "if",
           "condition_src": "request.getAge() < 18",
+          "condition": [
+            {
+              "type": "call",
+              "method": "com.example.demo.dto.CreateUserRequest#getAge()",
+              "confidence": "resolved",
+              "calls": []
+            }
+          ],
           "arms": [
             {
               "label": "then",
@@ -139,66 +147,74 @@ expression: stdout
         },
         {
           "type": "call",
-          "method": "com.example.demo.dto.CreateUserRequest#getName()",
+          "method": "com.example.demo.entity.User#<init>(String, String, Integer, Boolean)",
           "confidence": "resolved",
-          "calls": []
-        },
-        {
-          "type": "call",
-          "method": "String#trim()",
-          "confidence": "external",
-          "external_kind": "jdk-library",
-          "calls": []
-        },
-        {
-          "type": "call",
-          "method": "com.example.demo.dto.CreateUserRequest#getEmail()",
-          "confidence": "resolved",
-          "calls": []
-        },
-        {
-          "type": "call",
-          "method": "com.example.demo.util.Normalizers#normalizeEmail(String)",
-          "confidence": "resolved",
-          "calls": [
-            {
-              "type": "branch",
-              "kind": "if",
-              "condition_src": "email == null",
-              "arms": [
-                {
-                  "label": "then",
-                  "terminates": true,
-                  "children": []
-                }
-              ]
-            },
+          "inputs": [
             {
               "type": "call",
               "method": "String#trim()",
               "confidence": "external",
               "external_kind": "jdk-library",
+              "inputs": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.dto.CreateUserRequest#getName()",
+                  "confidence": "resolved",
+                  "calls": []
+                }
+              ],
               "calls": []
             },
             {
               "type": "call",
-              "method": "String#toLowerCase()",
-              "confidence": "external",
-              "external_kind": "jdk-library",
+              "method": "com.example.demo.util.Normalizers#normalizeEmail(String)",
+              "confidence": "resolved",
+              "inputs": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.dto.CreateUserRequest#getEmail()",
+                  "confidence": "resolved",
+                  "calls": []
+                }
+              ],
+              "calls": [
+                {
+                  "type": "branch",
+                  "kind": "if",
+                  "condition_src": "email == null",
+                  "arms": [
+                    {
+                      "label": "then",
+                      "terminates": true,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "type": "call",
+                  "method": "String#toLowerCase()",
+                  "confidence": "external",
+                  "external_kind": "jdk-library",
+                  "inputs": [
+                    {
+                      "type": "call",
+                      "method": "String#trim()",
+                      "confidence": "external",
+                      "external_kind": "jdk-library",
+                      "calls": []
+                    }
+                  ],
+                  "calls": []
+                }
+              ]
+            },
+            {
+              "type": "call",
+              "method": "com.example.demo.dto.CreateUserRequest#getAge()",
+              "confidence": "resolved",
               "calls": []
             }
-          ]
-        },
-        {
-          "type": "call",
-          "method": "com.example.demo.dto.CreateUserRequest#getAge()",
-          "confidence": "resolved",
-          "calls": []
-        },
-        {
-          "type": "call",
-          "method": "com.example.demo.entity.User#<init>(String, String, Integer, Boolean)",
-          "confidence": "resolved",
+          ],
           "calls": []
         },
         {
@@ -216,38 +232,40 @@ expression: stdout
           "calls": [
             {
               "type": "call",
-              "method": "com.example.demo.entity.User#getId()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
-              "method": "com.example.demo.entity.User#getName()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
-              "method": "com.example.demo.entity.User#getEmail()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
-              "method": "com.example.demo.entity.User#getAge()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
-              "method": "com.example.demo.entity.User#getActive()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
               "method": "com.example.demo.dto.UserResponse#<init>(Long, String, String, Integer, Boolean)",
               "confidence": "resolved",
+              "inputs": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getId()",
+                  "confidence": "resolved",
+                  "calls": []
+                },
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getName()",
+                  "confidence": "resolved",
+                  "calls": []
+                },
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getEmail()",
+                  "confidence": "resolved",
+                  "calls": []
+                },
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getAge()",
+                  "confidence": "resolved",
+                  "calls": []
+                },
+                {
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getActive()",
+                  "confidence": "resolved",
+                  "calls": []
+                }
+              ],
               "calls": []
             }
           ]

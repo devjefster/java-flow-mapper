@@ -7,19 +7,14 @@ sequenceDiagram
     participant UserController
     participant UserService
     participant UserRepository
-    participant ArrayList
     participant User
-    participant Boolean
     participant UserResponse
     participant List
-    participant IllegalStateException
     UserController->>UserService: findActive()
     UserService->>UserRepository: findAll()
     Note over UserRepository: external (Spring Data JPA)
-    UserService->>ArrayList: <init>(...)
     loop for-each User user : users (0..n)
     UserService->>User: getActive()
-    UserService->>Boolean: equals(_)
     alt Boolean.TRUE.equals(user.getActive())
     UserService->>UserService: toResponse(User)
     UserService->>User: getId()
@@ -28,7 +23,6 @@ sequenceDiagram
     UserService->>User: getAge()
     UserService->>User: getActive()
     UserService->>UserResponse: <init>(...)
-    UserService->>List: add(_)
     end
     end
     UserService->>List: forEach(Consumer)
@@ -37,7 +31,7 @@ sequenceDiagram
     List->>UserService: requireResponseEmail(UserResponse)
     UserService->>UserResponse: getEmail()
     alt response.getEmail() == null
-    UserService->>IllegalStateException: <init>(...)
+    Note over UserService: terminates
     end
     end
     %% Notes:

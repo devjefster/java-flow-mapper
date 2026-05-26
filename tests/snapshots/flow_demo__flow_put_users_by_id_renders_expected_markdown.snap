@@ -12,62 +12,70 @@ expression: stdout
 - `UserController#update(Long, UpdateUserRequest)`
   - `UserService#update(Long, UpdateUserRequest)` *[resolved]*
     - `UserService#findUserOrThrow(Long)` *[resolved]*
-      - `UserRepository#findById(Long)` *[external - Spring Data JPA]*
       - `Optional#orElseThrow(Supplier)` *[control - Optional]*
+        - inputs:
+          - `UserRepository#findById(Long)` *[external - Spring Data JPA]*
         - optional present:
         - optional empty: *(terminates)*
           - lambda `() -> new BusinessException(ErrorCode.USER_NOT_FOUND)`:
             - `BusinessException#<init>(ErrorCode)` *[resolved]*
               - `ErrorCode#getDefaultMessage()` *[resolved]*
-    - `User#getActive()` *[resolved]*
-    - `Boolean#equals(_)` *[external - JDK library]*
-    - `UpdateUserRequest#getEmail()` *[resolved]*
     - if Boolean.FALSE.equals(user.getActive()) && request.getEmail() != null: *(terminates)*
+      - condition:
+        - `User#getActive()` *[resolved]*
+        - `UpdateUserRequest#getEmail()` *[resolved]*
       - `BusinessException#<init>(ErrorCode)` *(see above)*
-    - `UpdateUserRequest#getEmail()` *[resolved]*
-    - `UpdateUserRequest#getEmail()` *[resolved]*
-    - `User#getEmail()` *[resolved]*
-    - `String#equalsIgnoreCase(_)` *[external - JDK library]*
     - if request.getEmail() != null &&
                 !request.getEmail().equalsIgnoreCase(user.getEmail()):
-      - `UpdateUserRequest#getEmail()` *[resolved]*
+      - condition:
+        - `UpdateUserRequest#getEmail()` *[resolved]*
+        - `UpdateUserRequest#getEmail()` *[resolved]*
+        - `User#getEmail()` *[resolved]*
       - `UserService#validateEmailUniqueness(String)` *[resolved]*
+        - inputs:
+          - `UpdateUserRequest#getEmail()` *[resolved]*
         - `Normalizers#normalizeEmail(String)` *[resolved]*
           - if email == null: *(terminates)*
-          - `String#trim()` *[external - JDK library]*
-          - `String#toLowerCase()` *[external - JDK library]*
-        - `UserRepository#existsByEmail(String)` *[external - Spring Data JPA]*
         - if repository.existsByEmail(normalized): *(terminates)*
+          - condition:
+            - `UserRepository#existsByEmail(String)` *[external - Spring Data JPA]*
           - `BusinessException#<init>(ErrorCode)` *(see above)*
-      - `UpdateUserRequest#getEmail()` *[resolved]*
-      - `Normalizers#normalizeEmail(String)` *(see above)*
       - `User#setEmail(String)` *[resolved]*
-    - `UpdateUserRequest#getName()` *[resolved]*
+        - inputs:
+          - `Normalizers#normalizeEmail(String)` *(see above)*
     - if request.getName() != null:
-      - `UpdateUserRequest#getName()` *[resolved]*
-      - `String#trim()` *[external - JDK library]*
+      - condition:
+        - `UpdateUserRequest#getName()` *[resolved]*
       - `User#setName(String)` *[resolved]*
-    - `UpdateUserRequest#getAge()` *[resolved]*
+        - inputs:
+          - `UpdateUserRequest#getName()` *[resolved]*
     - if request.getAge() != null:
-      - `UpdateUserRequest#getAge()` *[resolved]*
+      - condition:
+        - `UpdateUserRequest#getAge()` *[resolved]*
       - if request.getAge() < 18: *(terminates)*
+        - condition:
+          - `UpdateUserRequest#getAge()` *[resolved]*
         - `BusinessException#<init>(ErrorCode)` *(see above)*
-      - `UpdateUserRequest#getAge()` *[resolved]*
       - `User#setAge(Integer)` *[resolved]*
-    - `UpdateUserRequest#getActive()` *[resolved]*
-    - `UserService#activeChange(User, Boolean)` *[resolved]*
-      - `User#getActive()` *[resolved]*
-      - `Boolean#equals(_)` *[external - JDK library]*
-      - if requestedActive == null || requestedActive.equals(user.getActive()): *(terminates)*
-      - `Boolean#equals(_)` *[external - JDK library]*
-      - if Boolean.TRUE.equals(requestedActive): *(terminates)*
+        - inputs:
+          - `UpdateUserRequest#getAge()` *[resolved]*
     - case ACTIVATE:
+      - condition:
+        - `UserService#activeChange(User, Boolean)` *[resolved]*
+          - inputs:
+            - `UpdateUserRequest#getActive()` *[resolved]*
+          - if requestedActive == null || requestedActive.equals(user.getActive()): *(terminates)*
+            - condition:
+              - `User#getActive()` *[resolved]*
+          - if Boolean.TRUE.equals(requestedActive): *(terminates)*
+            - condition:
       - `User#setActive(Boolean)` *[resolved]*
     - case DEACTIVATE:
       - `User#setActive(Boolean)` *[resolved]*
     - case UNCHANGED:
-    - `UpdateUserRequest#getActive()` *[resolved]*
     - ternary request.getActive() == null:
+      - condition:
+        - `UpdateUserRequest#getActive()` *[resolved]*
       - `UserService#unchangedStatus(User)` *[resolved]*
         - `User#getActive()` *[resolved]*
     - else:
@@ -75,7 +83,6 @@ expression: stdout
         - `UpdateUserRequest#getActive()` *[resolved]*
     - try:
       - `UserService#recordUpdateStatus(String)` *[resolved]*
-        - `String#trim()` *[external - JDK library]*
     - catch IllegalArgumentException ex:
       - `UserService#recoverUpdateStatus(IllegalArgumentException)` *[resolved]*
     - finally:
@@ -83,12 +90,13 @@ expression: stdout
         - `User#getId()` *[resolved]*
     - `UserRepository#save(User)` *[external - Spring Data JPA]*
     - `UserService#toResponse(User)` *[resolved]*
-      - `User#getId()` *[resolved]*
-      - `User#getName()` *[resolved]*
-      - `User#getEmail()` *[resolved]*
-      - `User#getAge()` *[resolved]*
-      - `User#getActive()` *[resolved]*
       - `UserResponse#<init>(Long, String, String, Integer, Boolean)` *[resolved]*
+        - inputs:
+          - `User#getId()` *[resolved]*
+          - `User#getName()` *[resolved]*
+          - `User#getEmail()` *[resolved]*
+          - `User#getAge()` *[resolved]*
+          - `User#getActive()` *[resolved]*
 
 ## Inputs
 

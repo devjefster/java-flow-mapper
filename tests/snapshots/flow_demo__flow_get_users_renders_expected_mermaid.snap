@@ -6,15 +6,13 @@ expression: stdout
 sequenceDiagram
     participant UserController
     participant UserService
-    participant UserRepository
-    participant List
     participant Stream
-    participant User
+    participant UserRepository
     participant UserResponse
+    participant User
     UserController->>UserService: findAll()
     UserService->>UserRepository: findAll()
     Note over UserRepository: external (Spring Data JPA)
-    UserService->>List: stream()
     UserService->>Stream: map(Function)
     Note over Stream: control flow (traversal)
     loop stream Stream.map (0..n)
@@ -26,7 +24,6 @@ sequenceDiagram
     UserService->>User: getActive()
     UserService->>UserResponse: <init>(...)
     end
-    UserService->>Stream: toList()
     %% Notes:
     %% - Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
     %% - Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.

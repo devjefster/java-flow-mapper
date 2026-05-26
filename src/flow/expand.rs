@@ -12,6 +12,7 @@ use super::MAX_DEPTH;
 use super::node::{starts_uppercase, unresolved_node};
 use super::resolve::resolve_call;
 
+/// Expands a method's body into a call graph.
 pub(super) fn expand_method(
     index: &ProjectIndex,
     owner: &ClassInfo,
@@ -53,11 +54,12 @@ pub(super) fn expand_method(
         control_kind: None,
         scope: None,
         note: None,
+        inputs: Vec::new(),
         children,
     }
 }
 
-fn expand_body(
+pub(super) fn expand_body(
     index: &ProjectIndex,
     owner: &ClassInfo,
     caller: &MethodInfo,
@@ -82,7 +84,7 @@ fn expand_body(
             }
             BodyElement::Branch(branch) => {
                 // Control structure wrappers do not consume call depth.
-                nodes.extend(expand_body(
+                let condition = expand_body(
                     index,
                     owner,
                     caller,
@@ -90,7 +92,7 @@ fn expand_body(
                     unresolved,
                     stack,
                     caller_depth,
-                ));
+                );
                 let arms = branch
                     .arms
                     .iter()
@@ -111,6 +113,7 @@ fn expand_body(
                 nodes.push(FlowNode::Branch(BranchNode {
                     kind: branch.kind,
                     condition_src: branch.condition_src.clone(),
+                    condition,
                     arms,
                 }));
             }
@@ -199,6 +202,7 @@ fn caller_with_loop_locals(caller: &MethodInfo, locals: &[LoopLocal]) -> MethodI
     caller
 }
 
+/// Expands lambda syntax into flow nodes.
 pub(super) fn expand_lambdas(
     index: &ProjectIndex,
     owner: &ClassInfo,
@@ -267,6 +271,7 @@ fn expand_method_ref(
         },
         // Method references do not expose arity here, so matching accepts any arity.
         arity: usize::MAX,
+        inputs: Vec::new(),
         lambdas: Vec::new(),
         line: 0,
     };

@@ -12,6 +12,7 @@ pub(super) fn external_node(method_fqn: Fqn, kind: ExternalKind) -> CallNode {
         control_kind: None,
         scope: None,
         note: None,
+        inputs: Vec::new(),
         children: Vec::new(),
     }
 }
@@ -24,6 +25,7 @@ pub(super) fn unresolved_node(method_fqn: Fqn, note: Option<String>) -> CallNode
         control_kind: None,
         scope: None,
         note,
+        inputs: Vec::new(),
         children: Vec::new(),
     }
 }

@@ -354,3 +354,30 @@ Known deferrals:
 - Mermaid still flattens loop sections inside a single loop block; Markdown and JSON preserve section labels.
 - Loop iteration counts remain structural cardinality only; JFM does not infer data-dependent bounds.
 - Classic `for` local-variable typing for initializer-declared variables remains shallow beyond surfaced calls.
+
+## 2026-05-26 - Flowchart control-flow rendering
+
+Reworked Mermaid flowchart output so it reads as source-order control flow rather than a call-tree fanout:
+
+- Cleaned up `src/flow/expand.rs` after it had duplicated/stale expansion code, restoring a single branch-aware expansion path with `inputs` and branch `condition` fields populated.
+- Changed the Mermaid flowchart renderer to thread continuation exits through ordered sibling `FlowNode`s, so the main path now chains through calls like validation, guard checks, entity construction, repository save, and response mapping.
+- Rendered terminating branch arms as terminal paths that do not continue into later siblings, while implicit fall-through paths from `if` guards continue to the next source-order node.
+- Added semantic Mermaid shapes for resolved project calls, external calls, control/loop nodes, decisions, and terminators.
+- Added focused renderer tests for sibling sequencing and terminating-branch fall-through.
+- Refreshed all Mermaid flowchart snapshots, including the `POST /users` baseline and the max-depth flowchart case.
+- Added project-local `.cursor/mcp.json` for `mcp-mermaid`, but Cursor had not exposed the server descriptor yet, so MCP validation was not runnable in this slice.
+
+Verified:
+
+- `cargo check`
+- `cargo test render::mermaid_flowchart::tests`
+- `INSTA_UPDATE=always cargo test --test flow_demo mermaid_flowchart`
+- `cargo fmt --check`
+- `cargo test`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+- IDE lints for touched Rust files
+
+Known deferrals:
+
+- Mermaid MCP validation remains pending until Cursor refreshes and exposes the `mcp-mermaid` tool descriptor.
+- Flowchart paths remain structural; JFM still does not infer runtime branch truth, exception routing, or data-dependent loop exits.
