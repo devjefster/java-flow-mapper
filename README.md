@@ -71,6 +71,8 @@ cargo run -- flow demo-api/demo "GET /users/{id}" --format mermaid --diagram flo
 
 `--diagram sequence|flowchart` only applies to Mermaid output. Sequence diagrams are the default.
 
+Flowcharts render the visible source-order path: ordinary sibling calls are chained as continuations, branch arms that throw or return terminate visually, and implicit guard fall-through continues to the next source statement. Data dependencies such as call inputs and branch conditions are still shown with labeled edges.
+
 ### Depth Limit
 
 Use `--max-depth` to limit rendered call-tree depth:
@@ -92,6 +94,8 @@ Markdown and Mermaid default to a render depth of 5 when omitted. JSON is unlimi
 - Loop sections: classic `for` loops split `init`, `condition`, `body`, and `update`; other loops expose the sections that apply.
 
 The mapper records source structure and source text. It does not evaluate conditions, predict which branch runs, infer loop bounds, or model exception propagation.
+
+Mermaid flowcharts use semantic shapes to make the structure easier to scan: project calls, external calls, control/loop nodes, decisions, and terminal paths are rendered differently while preserving Mermaid's default theme styling.
 
 ### Debug Logging
 
