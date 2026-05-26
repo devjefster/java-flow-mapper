@@ -1,3 +1,8 @@
+//! Modeled external calls for common JDK, Optional, and Stream shapes.
+//!
+//! These tables intentionally cover the demo-oriented flow shapes; they are not
+//! a general Java type inference engine.
+
 use std::collections::HashSet;
 
 use crate::model::{
@@ -22,6 +27,7 @@ pub(super) fn expand_external_call_children(
     call: &CallSite,
     receiver_label: &str,
 ) -> Vec<FlowNode> {
+    // Some JDK APIs carry lambdas that should render as control structure nodes.
     if receiver_label == "Optional"
         && let Some(branch) = optional_branch(ctx, call)
     {

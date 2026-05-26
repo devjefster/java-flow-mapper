@@ -1,3 +1,5 @@
+//! Mermaid sequence diagram renderer.
+
 use std::collections::HashSet;
 use std::fmt::Write;
 
@@ -10,6 +12,7 @@ use super::common::{
 
 const DEFAULT_MAX_DEPTH: usize = 5;
 
+/// Render a flow as a fenced Mermaid sequence diagram.
 pub fn render(flow: &Flow, max_depth: Option<usize>) -> String {
     let effective_max_depth = max_depth.unwrap_or(DEFAULT_MAX_DEPTH);
     let mut truncated = false;

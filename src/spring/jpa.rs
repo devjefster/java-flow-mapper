@@ -1,6 +1,9 @@
+//! Spring Data repository recognition and inherited method synthesis.
+
 use crate::model::{ClassInfo, ClassKind, TypeRef};
 use tracing::debug;
 
+/// Repository methods modeled as inherited Spring Data calls.
 pub const JPA_INHERITED_METHODS: &[(&str, usize)] = &[
     ("save", 1),
     ("saveAll", 1),
@@ -26,6 +29,7 @@ const REPOSITORY_TYPES: &[&str] = &[
     "Repository",
 ];
 
+/// Return true when an interface extends a recognized Spring Data repository.
 pub fn is_spring_data_repository(class: &ClassInfo) -> bool {
     if class.kind != ClassKind::Interface {
         return false;
@@ -43,12 +47,14 @@ pub fn is_spring_data_repository(class: &ClassInfo) -> bool {
     matched
 }
 
+/// Return true when a repository method is synthesized from Spring Data.
 pub fn is_inherited_method(name: &str, arity: usize) -> bool {
     JPA_INHERITED_METHODS
         .iter()
         .any(|(method, method_arity)| *method == name && *method_arity == arity)
 }
 
+/// Infer display parameter types for a synthesized inherited repository call.
 pub fn inherited_param_types(class: &ClassInfo, method_name: &str, arity: usize) -> Vec<String> {
     if arity == 0 {
         return Vec::new();
@@ -62,6 +68,7 @@ pub fn inherited_param_types(class: &ClassInfo, method_name: &str, arity: usize)
     }
 }
 
+/// Infer the return type for a synthesized inherited repository call.
 pub fn inherited_return_type(
     class: &ClassInfo,
     method_name: &str,
@@ -93,6 +100,7 @@ fn import_matches(class: &ClassInfo, simple: &str) -> bool {
 }
 
 fn repository_generics(class: &ClassInfo) -> (String, String) {
+    // Spring Data repositories conventionally declare `<Entity, Id>`.
     let Some(extends) = class.extends.first() else {
         return ("_".to_string(), "_".to_string());
     };

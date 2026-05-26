@@ -1,3 +1,8 @@
+//! Receiver/type resolution for parsed call sites.
+//!
+//! Resolution favors project symbols, then imported externals, same-package
+//! classes, fully qualified names, and finally known JDK simple types.
+
 use std::collections::HashSet;
 
 use crate::model::{
@@ -208,6 +213,7 @@ fn receiver_type(
             },
         ),
         ReceiverKind::Field(name) | ReceiverKind::Local(name) => {
+            // Locals shadow params, and params shadow fields in Java method scope.
             if let Some(ty) = caller.locals.get(name) {
                 return resolve_type(index, owner, ty);
             }
@@ -260,6 +266,7 @@ fn resolve_type(index: &ProjectIndex, owner: &ClassInfo, ty: &TypeRef) -> Option
         return None;
     }
 
+    // Keep this order aligned with Java lookup needs in the demo fixture.
     if let Some(fqn) = index.by_simple_name.get(raw).and_then(|fqns| fqns.first()) {
         return Some(ResolvedType::Project(fqn.clone()));
     }

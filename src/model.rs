@@ -1,3 +1,8 @@
+//! Shared data contracts for parsing, resolving, and rendering Java flows.
+//!
+//! Parser modules populate source-level syntax types, the flow resolver expands
+//! them into graph nodes, and renderers consume the resulting `Flow`.
+
 #![allow(dead_code)]
 // PR #1 defines the output contract up front; some variants become live in later slices.
 
@@ -5,13 +10,18 @@ use std::collections::HashMap;
 use std::fmt;
 use std::path::PathBuf;
 
+/// Output format selected by the CLI.
 #[derive(Clone, Copy, Debug, clap::ValueEnum)]
 pub enum Format {
+    /// Human-readable Markdown.
     Markdown,
+    /// Structured JSON contract.
     Json,
+    /// Mermaid sequence diagram.
     Mermaid,
 }
 
+/// Fully qualified symbol name used as a stable key across indexes and flows.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Fqn(pub String);
 
@@ -21,30 +31,46 @@ impl fmt::Display for Fqn {
     }
 }
 
+/// How confidently a call target was resolved.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Confidence {
+    /// A concrete project method matched directly.
     Resolved,
+    /// A single implementation was selected for an interface target.
     SingleImpl,
+    /// A primary bean resolved a DI ambiguity.
     Primary,
+    /// A qualifier resolved a DI ambiguity.
     Qualifier,
+    /// Multiple project targets remain possible.
     Ambiguous,
+    /// The target is outside the indexed project.
     External,
+    /// The target could not be resolved.
     Unresolved,
 }
 
+/// External target classification used by rendered notes and JSON.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ExternalKind {
+    /// Java, javax, or Jakarta APIs.
     Jdk,
+    /// Synthesized Spring Data repository behavior.
     SpringData,
+    /// Imported non-JDK code outside the indexed project.
     ThirdParty,
+    /// External target with unknown origin.
     Unknown,
 }
 
+/// Known external calls that behave like control flow.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ControlKind {
+    /// Java `Optional` methods with present/empty arms.
     Optional,
 }
 
+/// HTTP verb for a Spring endpoint.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum HttpVerb {
     Get,
@@ -81,6 +107,7 @@ impl fmt::Display for HttpVerb {
     }
 }
 
+/// Spring MVC endpoint discovered from mapping annotations.
 #[derive(Clone, Debug)]
 pub struct Endpoint {
     pub verb: HttpVerb,
@@ -90,6 +117,7 @@ pub struct Endpoint {
     pub line: u32,
 }
 
+/// Method parameter with the request source, when known.
 #[derive(Clone, Debug)]
 pub struct ParamInfo {
     pub name: String,
@@ -97,6 +125,7 @@ pub struct ParamInfo {
     pub source: ParamSource,
 }
 
+/// Request binding source for a method parameter.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ParamSource {
     Path,
@@ -106,6 +135,7 @@ pub enum ParamSource {
     Unspecified,
 }
 
+/// Parsed Java class or interface.
 #[derive(Clone, Debug)]
 pub struct ClassInfo {
     pub fqn: Fqn,
@@ -122,18 +152,21 @@ pub struct ClassInfo {
     pub line: u32,
 }
 
+/// Java type declaration kind supported by the parser.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ClassKind {
     Class,
     Interface,
 }
 
+/// Java type reference, preserving the raw spelling and top-level generics.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TypeRef {
     pub raw: String,
     pub generics: Vec<String>,
 }
 
+/// Parsed field used for receiver/type resolution.
 #[derive(Clone, Debug)]
 pub struct FieldInfo {
     pub name: String,
@@ -141,6 +174,7 @@ pub struct FieldInfo {
     pub annotations: Vec<String>,
 }
 
+/// Parsed method or constructor with body elements and local variable types.
 #[derive(Clone, Debug)]
 pub struct MethodInfo {
     pub fqn: Fqn,
@@ -154,13 +188,18 @@ pub struct MethodInfo {
     pub line: u32,
 }
 
+/// Source-level method body element before flow expansion.
 #[derive(Clone, Debug)]
 pub enum BodyElement {
+    /// A method or constructor call.
     Call(CallSite),
+    /// A parsed branch such as `if`.
     Branch(BranchSyntax),
+    /// A parsed loop.
     Loop(LoopSyntax),
 }
 
+/// Lambda or method reference captured from call arguments.
 #[derive(Clone, Debug)]
 pub struct LambdaSyntax {
     pub kind: LambdaKind,
@@ -168,12 +207,16 @@ pub struct LambdaSyntax {
     pub body: Vec<BodyElement>,
 }
 
+/// Java inline function syntax carried by a call argument.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum LambdaKind {
+    /// Lambda expression such as `x -> work(x)`.
     Lambda,
+    /// Method reference such as `this::work`.
     MethodRef,
 }
 
+/// Parsed branch structure before call targets are resolved.
 #[derive(Clone, Debug)]
 pub struct BranchSyntax {
     pub kind: BranchKind,
@@ -185,6 +228,7 @@ pub struct BranchSyntax {
     pub else_terminates: bool,
 }
 
+/// Parsed loop structure before call targets are resolved.
 #[derive(Clone, Debug)]
 pub struct LoopSyntax {
     pub kind: LoopKind,
@@ -195,12 +239,14 @@ pub struct LoopSyntax {
     pub locals: Vec<LoopLocal>,
 }
 
+/// Loop-scoped local variable, currently used for enhanced-for variables.
 #[derive(Clone, Debug)]
 pub struct LoopLocal {
     pub name: String,
     pub ty: TypeRef,
 }
 
+/// Parsed call site with enough receiver information for resolution.
 #[derive(Clone, Debug)]
 pub struct CallSite {
     pub receiver: ReceiverKind,
@@ -210,16 +256,24 @@ pub struct CallSite {
     pub line: u32,
 }
 
+/// Receiver shape extracted from Java call syntax.
 #[derive(Clone, Debug)]
 pub enum ReceiverKind {
+    /// Implicit or explicit call on the current class.
     This,
+    /// Receiver identified as a field name.
     Field(String),
+    /// Receiver identified as a local or parameter name.
     Local(String),
+    /// Static-style receiver or class literal.
     TypeName(String),
+    /// Constructor target from `new`.
     Constructor(String),
+    /// Receiver is another call whose return type must be inferred.
     Chain(Box<CallSite>),
 }
 
+/// In-memory index of parsed project symbols and endpoints.
 #[derive(Clone, Debug, Default)]
 pub struct ProjectIndex {
     pub classes: HashMap<Fqn, ClassInfo>,
@@ -227,6 +281,7 @@ pub struct ProjectIndex {
     pub endpoints: Vec<Endpoint>,
 }
 
+/// Resolved call flow for one endpoint.
 #[derive(Clone, Debug)]
 pub struct Flow {
     pub endpoint: Endpoint,
@@ -236,6 +291,7 @@ pub struct Flow {
     pub notes: Vec<String>,
 }
 
+/// Call that could not be resolved, with a human-readable reason.
 #[derive(Clone, Debug)]
 pub struct UnresolvedRef {
     pub receiver_type: String,
@@ -243,6 +299,7 @@ pub struct UnresolvedRef {
     pub reason: String,
 }
 
+/// Resolved call node in the flow graph.
 #[derive(Clone, Debug)]
 pub struct CallNode {
     pub method_fqn: Fqn,
@@ -254,14 +311,20 @@ pub struct CallNode {
     pub children: Vec<FlowNode>,
 }
 
+/// Renderable flow graph node.
 #[derive(Clone, Debug)]
 pub enum FlowNode {
+    /// A method, constructor, external, or unresolved call.
     Call(CallNode),
+    /// Lambda wrapper preserving argument syntax.
     Lambda(LambdaNode),
+    /// Branch with one or more labeled arms.
     Branch(BranchNode),
+    /// Loop with condition/body/update sections.
     Loop(LoopNode),
 }
 
+/// Expanded lambda or method reference in the flow graph.
 #[derive(Clone, Debug)]
 pub struct LambdaNode {
     pub kind: LambdaKind,
@@ -269,6 +332,7 @@ pub struct LambdaNode {
     pub children: Vec<FlowNode>,
 }
 
+/// Expanded branch in the flow graph.
 #[derive(Clone, Debug)]
 pub struct BranchNode {
     pub kind: BranchKind,
@@ -276,6 +340,7 @@ pub struct BranchNode {
     pub arms: Vec<Arm>,
 }
 
+/// Expanded loop in the flow graph.
 #[derive(Clone, Debug)]
 pub struct LoopNode {
     pub kind: LoopKind,
@@ -285,6 +350,7 @@ pub struct LoopNode {
     pub update: Vec<FlowNode>,
 }
 
+/// Labeled branch arm with termination metadata.
 #[derive(Clone, Debug)]
 pub struct Arm {
     pub label: String,
@@ -292,12 +358,16 @@ pub struct Arm {
     pub children: Vec<FlowNode>,
 }
 
+/// Branch source modeled by the flow graph.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum BranchKind {
+    /// Source-level `if`.
     If,
+    /// Synthetic branch for `Optional` present/empty behavior.
     Optional,
 }
 
+/// Loop source modeled by the flow graph.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum LoopKind {
     For,
@@ -308,7 +378,9 @@ pub enum LoopKind {
     Stream,
 }
 
+/// Scope metadata for calls that need renderer-visible context.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Scope {
+    /// Call resolved to another method on the same class.
     IntraClass,
 }

@@ -1,5 +1,8 @@
+//! Small Spring annotation extractors used while indexing Java source.
+
 use crate::model::{HttpVerb, ParamSource};
 
+/// Return the class-level `@RequestMapping` path, if present.
 pub fn request_mapping_path(annotations: &[String]) -> String {
     annotations
         .iter()
@@ -8,6 +11,7 @@ pub fn request_mapping_path(annotations: &[String]) -> String {
         .unwrap_or_default()
 }
 
+/// Return the HTTP verb and method-level path from supported mapping annotations.
 pub fn http_mapping(annotations: &[String]) -> Option<(HttpVerb, String)> {
     for annotation in annotations {
         let name = annotation_name(annotation);
@@ -31,6 +35,7 @@ pub fn http_mapping(annotations: &[String]) -> Option<(HttpVerb, String)> {
     None
 }
 
+/// Classify a method parameter's Spring request binding annotation.
 pub fn param_source(param: &str) -> ParamSource {
     if param.contains("@PathVariable") {
         ParamSource::Path

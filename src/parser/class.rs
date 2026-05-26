@@ -1,3 +1,5 @@
+//! Class, field, method, and type extraction from Java syntax trees.
+
 use std::collections::HashMap;
 use std::path::Path;
 use tree_sitter::Node;
@@ -6,6 +8,7 @@ use super::body::parse_params;
 use super::utils::{header_text, line, named_children, node_text, text};
 use crate::model::{ClassInfo, ClassKind, Fqn, TypeRef};
 
+/// Extract the Java package declaration for a file.
 pub fn extract_package(root: Node<'_>, source: &str) -> String {
     for child in named_children(root) {
         if child.kind() == "package_declaration" {
@@ -23,6 +26,7 @@ pub fn extract_package(root: Node<'_>, source: &str) -> String {
     String::new()
 }
 
+/// Extract non-wildcard imports keyed by simple type name.
 pub fn extract_imports(root: Node<'_>, source: &str) -> HashMap<String, String> {
     let mut imports = HashMap::new();
     for child in named_children(root) {
@@ -49,6 +53,7 @@ pub fn extract_imports(root: Node<'_>, source: &str) -> HashMap<String, String> 
     imports
 }
 
+/// Recursively collect top-level and nested classes/interfaces.
 pub fn collect_classes(
     node: Node<'_>,
     source: &str,
@@ -69,6 +74,7 @@ pub fn collect_classes(
     }
 }
 
+/// Parse a class or interface declaration into the project model.
 pub fn parse_class(
     node: Node<'_>,
     source: &str,
@@ -126,6 +132,7 @@ pub fn parse_class(
     }
 }
 
+/// Parse a field declaration.
 pub fn parse_field(node: Node<'_>, source: &str) -> crate::model::FieldInfo {
     let declaration = text(node, source);
     let before_assignment = declaration.split('=').next().unwrap_or(&declaration);
@@ -146,6 +153,7 @@ pub fn parse_field(node: Node<'_>, source: &str) -> crate::model::FieldInfo {
     }
 }
 
+/// Parse a method or constructor declaration.
 pub fn parse_method(
     node: Node<'_>,
     source: &str,
@@ -199,6 +207,7 @@ pub fn parse_method(
     }
 }
 
+/// Parse a Java type reference and its top-level generic arguments.
 pub fn parse_type_ref(raw: &str) -> TypeRef {
     let raw = raw.trim().trim_end_matches("...").to_string();
     let generics = raw
@@ -210,6 +219,7 @@ pub fn parse_type_ref(raw: &str) -> TypeRef {
     TypeRef { raw, generics }
 }
 
+/// Parse direct `extends` types from a class or interface header.
 pub fn parse_extends(text: &str, kind: &ClassKind) -> Vec<TypeRef> {
     let header = header_text(text);
     let Some(after_extends) = header.split(" extends ").nth(1) else {
@@ -230,6 +240,7 @@ pub fn parse_extends(text: &str, kind: &ClassKind) -> Vec<TypeRef> {
         .collect()
 }
 
+/// Parse direct `implements` types from a class header.
 pub fn parse_implements(text: &str) -> Vec<TypeRef> {
     let header = header_text(text);
     let Some(after_implements) = header.split(" implements ").nth(1) else {

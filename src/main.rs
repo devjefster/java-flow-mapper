@@ -1,3 +1,8 @@
+//! Command-line entry point for Java Flow Mapper.
+//!
+//! The binary keeps setup thin: initialize tracing, then delegate CLI parsing
+//! and command execution to `cli`.
+
 mod cli;
 mod flow;
 mod model;

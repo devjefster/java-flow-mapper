@@ -1,3 +1,5 @@
+//! Method body extraction for calls, branches, loops, locals, and lambdas.
+
 use std::collections::HashMap;
 use tree_sitter::Node;
 
@@ -7,21 +9,22 @@ use crate::model::{
 
 use super::utils::{named_children, node_text, text};
 
+/// Collect renderable body elements from a Java syntax node.
 pub fn collect_body_elements(node: Node<'_>, source: &str) -> Vec<BodyElement> {
     let mut elements = Vec::new();
     collect_body_elements_into(node, source, &mut elements);
     elements
 }
 
+/// Append body elements found under `node`.
 pub fn collect_body_elements_into(node: Node<'_>, source: &str, elements: &mut Vec<BodyElement>) {
     if node.kind() == "lambda_expression" {
+        // Lambdas are attached to their owning call argument, not flattened here.
         return;
     }
 
     if node.kind() == "if_statement" {
-        elements.push(BodyElement::Branch(
-            crate::parser::body::parse_if_statement(node, source),
-        ));
+        elements.push(BodyElement::Branch(parse_if_statement(node, source)));
         return;
     }
 
@@ -49,6 +52,7 @@ pub fn collect_body_elements_into(node: Node<'_>, source: &str, elements: &mut V
     }
 }
 
+/// Parse an `if_statement` into a branch syntax node.
 pub fn parse_if_statement(node: Node<'_>, source: &str) -> crate::model::BranchSyntax {
     let condition = node.child_by_field_name("condition");
     let consequence = node.child_by_field_name("consequence");
@@ -78,6 +82,7 @@ fn is_loop_statement(kind: &str) -> bool {
     )
 }
 
+/// Parse a Java loop statement into a loop syntax node.
 pub fn parse_loop_statement(node: Node<'_>, source: &str) -> crate::model::LoopSyntax {
     match node.kind() {
         "for_statement" => parse_for_statement(node, source),
@@ -261,6 +266,7 @@ fn arm_terminates(node: Node<'_>) -> bool {
         .is_some_and(|statement| matches!(statement.kind(), "throw_statement" | "return_statement"))
 }
 
+/// Parse a Java method invocation into a call site.
 pub fn parse_method_invocation(node: Node<'_>, source: &str) -> Option<CallSite> {
     let method_name = node_text(node.child_by_field_name("name"), source)?;
     let receiver = node
@@ -286,6 +292,7 @@ pub fn parse_method_invocation(node: Node<'_>, source: &str) -> Option<CallSite>
     })
 }
 
+/// Parse an object creation expression into a constructor call site.
 pub fn parse_constructor_invocation(node: Node<'_>, source: &str) -> Option<CallSite> {
     let ty = node
         .child_by_field_name("type")
@@ -305,6 +312,7 @@ pub fn parse_constructor_invocation(node: Node<'_>, source: &str) -> Option<Call
     })
 }
 
+/// Collect local variable declarations visible within a method body.
 pub fn collect_locals(
     node: Node<'_>,
     source: &str,
@@ -321,6 +329,7 @@ pub fn collect_locals(
     }
 }
 
+/// Parse a local variable declaration into its name and type.
 pub fn parse_local_declaration(declaration: &str) -> Option<(String, crate::model::TypeRef)> {
     let before_assignment = declaration.split('=').next().unwrap_or(declaration);
     let before_semicolon = before_assignment.trim_end_matches(';').trim();
@@ -339,12 +348,14 @@ fn receiver_kind(node: Node<'_>, source: &str) -> ReceiverKind {
 
     let receiver = text(node, source);
     let trimmed = receiver.trim();
+    // Complex receiver expressions are kept unresolved until a fuller type pass exists.
     if trimmed.contains('(') {
         return ReceiverKind::TypeName("Unknown".to_string());
     }
 
     if trimmed.contains('.') {
         let first = trimmed.split('.').next().unwrap_or(trimmed);
+        // Uppercase leading segments are treated as static/class receivers.
         if crate::parser::utils::starts_uppercase(first) {
             return ReceiverKind::TypeName(first.to_string());
         }
@@ -357,6 +368,7 @@ fn receiver_kind(node: Node<'_>, source: &str) -> ReceiverKind {
     }
 }
 
+/// Extract lambda expressions and method references from call arguments.
 pub fn lambda_arguments(arguments: Node<'_>, source: &str) -> Vec<LambdaSyntax> {
     let mut lambdas = Vec::new();
     collect_lambda_arguments(arguments, source, &mut lambdas);
@@ -393,6 +405,7 @@ fn collect_lambda_arguments(node: Node<'_>, source: &str, lambdas: &mut Vec<Lamb
     }
 }
 
+/// Parse comma-separated method parameters.
 pub fn parse_params(params: &str) -> Vec<crate::model::ParamInfo> {
     crate::parser::utils::split_top_level(params, ',')
         .into_iter()

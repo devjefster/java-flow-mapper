@@ -1,3 +1,8 @@
+//! Flow graph construction from an indexed Java project.
+//!
+//! The resolver starts at a Spring endpoint handler and expands reachable calls
+//! into a bounded graph that renderers can present in multiple formats.
+
 use std::collections::HashSet;
 
 use thiserror::Error;
@@ -13,9 +18,10 @@ mod node;
 mod resolve;
 
 /// Resolver-time recursion cap. This protects graph construction and is
-/// independent from render-time `--max-depth`, which only trims output.
+/// independent of render-time `--max-depth`, which only trims output.
 const MAX_DEPTH: usize = 8;
 
+/// Errors returned while selecting or expanding an endpoint flow.
 #[derive(Debug, Error)]
 pub enum FlowError {
     #[error("no endpoints found while looking for {verb} {path}")]
@@ -26,6 +32,7 @@ pub enum FlowError {
     HandlerMissing(Fqn),
 }
 
+/// Build a resolved flow graph for one HTTP endpoint.
 pub fn build_flow(index: &ProjectIndex, verb: HttpVerb, path: &str) -> Result<Flow, FlowError> {
     if index.endpoints.is_empty() {
         return Err(FlowError::NoEndpointsFound {

@@ -1,3 +1,5 @@
+//! Test-only legacy parser kept for focused parser regression coverage.
+
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -878,9 +880,8 @@ fn named_children(node: Node<'_>) -> Vec<Node<'_>> {
 mod tests {
     use std::path::Path;
 
-    use crate::model::{BodyElement, LoopKind, MethodInfo};
-
     use super::parse_file;
+    use crate::model::{BodyElement, LoopKind, MethodInfo};
 
     #[test]
     fn parses_if_without_else_and_marks_throwing_then_arm() {

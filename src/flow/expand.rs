@@ -1,3 +1,5 @@
+//! Expansion from parsed method body syntax into flow graph nodes.
+
 use std::collections::HashSet;
 
 use crate::model::{
@@ -19,6 +21,7 @@ pub(super) fn expand_method(
     stack: &mut HashSet<Fqn>,
     depth: usize,
 ) -> CallNode {
+    // This cap bounds graph construction; render-time depth limits are separate.
     if depth >= MAX_DEPTH {
         unresolved.push(UnresolvedRef {
             receiver_type: owner.simple_name.clone(),
@@ -78,6 +81,7 @@ fn expand_body(
                 )));
             }
             BodyElement::Branch(branch) => {
+                // Control structure wrappers do not consume call depth.
                 nodes.extend(expand_body(
                     index,
                     owner,
@@ -255,6 +259,7 @@ fn expand_method_ref(
         } else {
             method_name.trim().to_string()
         },
+        // Method references do not expose arity here, so matching accepts any arity.
         arity: usize::MAX,
         lambdas: Vec::new(),
         line: 0,

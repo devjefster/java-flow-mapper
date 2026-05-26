@@ -1,3 +1,5 @@
+//! Output rendering dispatch for supported flow formats.
+
 mod common;
 mod json;
 mod markdown;
@@ -5,6 +7,8 @@ mod mermaid;
 
 use crate::model::{Flow, Format};
 
+/// Render a flow in the requested format.
+///
 /// Render-time `max_depth` trims output only; it is independent from
 /// `flow::MAX_DEPTH`, which protects graph construction from runaway recursion.
 /// Control nodes (branches, loops, lambda wrappers, and arms) do not count

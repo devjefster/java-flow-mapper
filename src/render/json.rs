@@ -1,3 +1,5 @@
+//! JSON renderer with DTOs kept separate from internal flow models.
+
 use serde::Serialize;
 
 use crate::model::{
@@ -8,6 +10,7 @@ use crate::model::{
 
 use super::common::{max_remaining_depth, truncated_note};
 
+/// Render a flow as pretty JSON.
 pub fn render(flow: &Flow, max_depth: Option<usize>) -> String {
     let mut truncated = false;
     let call_sequence = if max_depth == Some(0) {

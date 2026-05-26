@@ -1,3 +1,5 @@
+//! Small constructors and label helpers for flow nodes.
+
 use crate::model::{
     CallNode, CallSite, Confidence, ExternalKind, Fqn, ReceiverKind, Scope, TypeRef,
 };

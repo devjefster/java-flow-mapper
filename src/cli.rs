@@ -1,3 +1,8 @@
+//! CLI parsing and command orchestration.
+//!
+//! This module keeps user input validation near Clap and delegates indexing,
+//! flow construction, and rendering to their dedicated modules.
+
 use std::path::PathBuf;
 
 use anyhow::{Context, Result, bail};
@@ -17,7 +22,7 @@ struct Args {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
-    /// Render a markdown call flow for an HTTP endpoint.
+    /// Render a call flow for an HTTP endpoint.
     Flow {
         /// Java project root to parse.
         root: PathBuf,
@@ -32,6 +37,7 @@ enum Commands {
     },
 }
 
+/// Parse CLI arguments, run the selected command, and print its output.
 pub fn run() -> Result<()> {
     let args = Args::parse();
 

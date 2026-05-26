@@ -1,3 +1,5 @@
+//! Shared renderer helpers for depth accounting and labels.
+
 use crate::model::{CallNode, ControlKind, ExternalKind, FlowNode, LoopKind};
 
 /// Render-time `max_depth` trims output only; it is independent from

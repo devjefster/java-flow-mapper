@@ -1,3 +1,8 @@
+//! Java project indexing backed by tree-sitter.
+//!
+//! The parser builds a lightweight symbol index for Spring controllers,
+//! classes, methods, fields, local variables, and endpoint mappings.
+
 mod annotations;
 mod body;
 mod class;
@@ -18,11 +23,13 @@ use self::class::{collect_classes, extract_imports, extract_package};
 use self::utils::join_paths;
 use crate::model::{ClassInfo, Endpoint, ProjectIndex};
 
+/// Parsed content from a single Java source file.
 pub struct ParsedFile {
     pub classes: Vec<ClassInfo>,
     pub endpoints: Vec<Endpoint>,
 }
 
+/// Walk a Java project root and index supported `.java` files.
 pub fn index_project(root: &Path) -> Result<ProjectIndex> {
     let mut parser = tree_sitter::Parser::new();
     let language: tree_sitter::Language = tree_sitter_java::LANGUAGE.into();
@@ -69,6 +76,7 @@ pub fn index_project(root: &Path) -> Result<ProjectIndex> {
     Ok(index)
 }
 
+/// Parse one Java syntax tree into classes and Spring endpoints.
 pub fn parse_file(path: &Path, source: &str, root: Node<'_>) -> ParsedFile {
     let package = extract_package(root, source);
     let imports = extract_imports(root, source);
