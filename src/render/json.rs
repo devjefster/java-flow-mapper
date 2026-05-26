@@ -324,6 +324,7 @@ fn branch_kind_json_label(kind: BranchKind) -> &'static str {
     match kind {
         BranchKind::If => "if",
         BranchKind::Switch => "switch",
+        BranchKind::Ternary => "ternary",
         BranchKind::Optional => "optional",
     }
 }

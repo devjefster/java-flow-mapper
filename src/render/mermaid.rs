@@ -171,6 +171,7 @@ fn render_branch(
                 .map(|arm| arm.label.as_str())
                 .unwrap_or("")
         ),
+        BranchKind::Ternary => mermaid_condition(&branch.condition_src),
         BranchKind::Optional => format!("optional {}", branch.arms[0].label),
     };
 
@@ -180,6 +181,7 @@ fn render_branch(
             let label = match branch.kind {
                 BranchKind::If => "else".to_string(),
                 BranchKind::Switch => format!("else case {}", arm.label),
+                BranchKind::Ternary => "else".to_string(),
                 BranchKind::Optional => format!("else optional {}", arm.label),
             };
             writeln!(out, "    {label}").unwrap();

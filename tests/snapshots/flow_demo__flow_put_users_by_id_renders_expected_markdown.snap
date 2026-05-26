@@ -66,6 +66,13 @@ expression: stdout
     - case DEACTIVATE:
       - `User#setActive(Boolean)` *[resolved]*
     - case UNCHANGED:
+    - `UpdateUserRequest#getActive()` *[resolved]*
+    - ternary request.getActive() == null:
+      - `UserService#unchangedStatus(User)` *[resolved]*
+        - `User#getActive()` *[resolved]*
+    - else:
+      - `UserService#requestedStatus(UpdateUserRequest)` *[resolved]*
+        - `UpdateUserRequest#getActive()` *[resolved]*
     - `UserRepository#save(User)` *[external - Spring Data JPA]*
     - `UserService#toResponse(User)` *[resolved]*
       - `User#getId()` *[resolved]*

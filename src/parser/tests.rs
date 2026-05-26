@@ -352,9 +352,30 @@ fn parses_switch_expression_branches() {
 }
 
 #[test]
-#[ignore]
 fn parses_ternary_expression_branches() {
-    unimplemented!("ternary_expression parsing is planned for PR #6");
+    let methods = parse_methods(
+        r#"
+            class Demo {
+                String choose() {
+                    return enabled() ? yes() : no();
+                }
+            }
+            "#,
+    );
+    let method = method(&methods, "choose");
+
+    assert_eq!(method.body.len(), 1);
+    let BodyElement::Branch(branch) = &method.body[0] else {
+        panic!("expected ternary branch");
+    };
+    assert_eq!(branch.kind, BranchKind::Ternary);
+    assert_eq!(branch.condition_src, "enabled()");
+    assert_eq!(call_name(&branch.condition_calls[0]), "enabled");
+    assert_eq!(branch.arms.len(), 2);
+    assert_eq!(branch.arms[0].label, "then");
+    assert_eq!(call_name(&branch.arms[0].body[0]), "yes");
+    assert_eq!(branch.arms[1].label, "else");
+    assert_eq!(call_name(&branch.arms[1].body[0]), "no");
 }
 
 fn parse_methods(source: &str) -> Vec<MethodInfo> {

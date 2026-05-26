@@ -374,6 +374,8 @@ pub enum BranchKind {
     If,
     /// Source-level `switch`.
     Switch,
+    /// Source-level ternary expression.
+    Ternary,
     /// Synthetic branch for `Optional` present/empty behavior.
     Optional,
 }

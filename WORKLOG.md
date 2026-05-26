@@ -270,4 +270,31 @@ Known deferrals:
 
 - Switch-expression result values are not modeled beyond the branch/case structure discovered by tree-sitter.
 - Fallthrough semantics are not inferred; cases are represented as labeled arms with their collected body calls.
-- Ternary and try/catch flow-control elements remain deferred.
+- Try/catch flow-control elements remain deferred.
+
+## 2026-05-26 - Ternary branch elements
+
+Implemented ternary-expression flow-control support and added demo snapshot coverage:
+
+- Added `BranchKind::Ternary` and reused parsed branch arms so inline `cond ? a : b` expressions share the existing branch expansion path.
+- Parsed `ternary_expression` nodes before generic recursive call collection so condition and arm calls no longer flatten as unconditional siblings.
+- Preserved the condition source text, condition calls, a `then` arm for the consequence expression, and an `else` arm for the alternative expression.
+- Kept ternary arm termination flags conservative at `false`; expression-result and throw-expression semantics are not modeled yet.
+- Rendered ternaries in Markdown (`ternary ...:` / `else:`), JSON (`"kind": "ternary"`), and Mermaid `alt` / `else` blocks.
+- Activated the ternary parser unit test with `enabled() ? yes() : no()` to cover condition calls and both arm calls.
+- Added a ternary to the existing `PUT /users/{id}` demo update flow using `request.getActive() == null ? unchangedStatus(user) : requestedStatus(request)`.
+- Refreshed the PUT endpoint Markdown, JSON, and Mermaid snapshots so the fixture now covers ternary output in all formats.
+
+Verified:
+
+- `cargo test parser::tests::parses_ternary_expression_branches -- --nocapture`
+- `INSTA_UPDATE=always cargo test --test flow_demo flow_put_users_by_id_renders_expected`
+- `cargo fmt --check`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+- `INSTA_UPDATE=always cargo test`
+
+Known deferrals:
+
+- Ternary expression result values are not represented separately from branch-arm calls.
+- Ternary arm termination remains conservative; throw expressions and richer expression semantics are deferred.
+- Try/catch flow-control elements remain deferred.

@@ -496,6 +496,59 @@ expression: stdout
         },
         {
           "type": "call",
+          "method": "com.example.demo.dto.UpdateUserRequest#getActive()",
+          "confidence": "resolved",
+          "calls": []
+        },
+        {
+          "type": "branch",
+          "kind": "ternary",
+          "condition_src": "request.getActive() == null",
+          "arms": [
+            {
+              "label": "then",
+              "terminates": false,
+              "children": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.service.UserService#unchangedStatus(User)",
+                  "confidence": "resolved",
+                  "scope": "intra-class",
+                  "calls": [
+                    {
+                      "type": "call",
+                      "method": "com.example.demo.entity.User#getActive()",
+                      "confidence": "resolved",
+                      "calls": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "else",
+              "terminates": false,
+              "children": [
+                {
+                  "type": "call",
+                  "method": "com.example.demo.service.UserService#requestedStatus(UpdateUserRequest)",
+                  "confidence": "resolved",
+                  "scope": "intra-class",
+                  "calls": [
+                    {
+                      "type": "call",
+                      "method": "com.example.demo.dto.UpdateUserRequest#getActive()",
+                      "confidence": "resolved",
+                      "calls": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "call",
           "method": "com.example.demo.repository.UserRepository#save(User)",
           "confidence": "external",
           "external_kind": "spring-data",

@@ -39,6 +39,11 @@ pub fn collect_body_elements_into(node: Node<'_>, source: &str, elements: &mut V
         return;
     }
 
+    if node.kind() == "ternary_expression" {
+        elements.push(BodyElement::Branch(parse_ternary_expression(node, source)));
+        return;
+    }
+
     if is_loop_statement(node.kind()) {
         elements.push(BodyElement::Loop(parse_loop_statement(node, source)));
         return;
@@ -183,6 +188,46 @@ fn switch_label_text(label: Node<'_>, source: &str) -> String {
             .unwrap_or(trimmed)
             .trim()
             .to_string()
+    }
+}
+
+/// Parse a ternary expression into a two-arm branch syntax node.
+pub fn parse_ternary_expression(node: Node<'_>, source: &str) -> BranchSyntax {
+    let condition = node.child_by_field_name("condition");
+    let consequence = node.child_by_field_name("consequence");
+    let alternative = node.child_by_field_name("alternative");
+
+    let then_arm = consequence
+        .map(|consequence| collect_body_elements(consequence, source))
+        .unwrap_or_default();
+    let else_arm = alternative
+        .map(|alternative| collect_body_elements(alternative, source))
+        .unwrap_or_default();
+
+    BranchSyntax {
+        kind: BranchKind::Ternary,
+        condition_src: condition
+            .map(|condition| text(condition, source))
+            .unwrap_or_default(),
+        condition_calls: condition
+            .map(|condition| collect_body_elements(condition, source))
+            .unwrap_or_default(),
+        arms: vec![
+            BranchArmSyntax {
+                label: "then".to_string(),
+                body: then_arm.clone(),
+                terminates: false,
+            },
+            BranchArmSyntax {
+                label: "else".to_string(),
+                body: else_arm.clone(),
+                terminates: false,
+            },
+        ],
+        then_arm,
+        else_arm: Some(else_arm),
+        then_terminates: false,
+        else_terminates: false,
     }
 }
 

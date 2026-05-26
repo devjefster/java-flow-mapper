@@ -104,6 +104,14 @@ sequenceDiagram
     UserService->>User: setActive(Boolean)
     else case UNCHANGED
     end
+    UserService->>UpdateUserRequest: getActive()
+    alt request.getActive() == null
+    UserService->>UserService: unchangedStatus(User)
+    UserService->>User: getActive()
+    else
+    UserService->>UserService: requestedStatus(UpdateUserRequest)
+    UserService->>UpdateUserRequest: getActive()
+    end
     UserService->>UserRepository: save(User)
     Note over UserRepository: external (Spring Data JPA)
     UserService->>UserService: toResponse(User)

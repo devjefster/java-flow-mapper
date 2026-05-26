@@ -211,8 +211,10 @@ fn render_branch(
             (BranchKind::If, "else") => "else".to_string(),
             (BranchKind::Switch, "default") => "default".to_string(),
             (BranchKind::Switch, label) => format!("case {label}"),
+            (BranchKind::Ternary, "then") => format!("ternary {}", branch.condition_src),
+            (BranchKind::Ternary, "else") => "else".to_string(),
             (BranchKind::Optional, label) => format!("optional {label}"),
-            (BranchKind::If, label) => label.to_string(),
+            (BranchKind::If | BranchKind::Ternary, label) => label.to_string(),
         };
         write!(out, "{indent}- {header}:").unwrap();
         if arm.terminates {
