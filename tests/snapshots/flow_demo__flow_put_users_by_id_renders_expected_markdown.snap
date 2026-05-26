@@ -1,0 +1,92 @@
+---
+source: tests/flow_demo.rs
+expression: stdout
+---
+# PUT /users/{id}
+
+**Controller**: `com.example.demo.controller.UserController#update(Long, UpdateUserRequest)`
+**File**: `demo-api/demo/src/main/java/com/example/demo/controller/UserController.java:LINE`
+
+## Call sequence
+
+- `UserController#update(Long, UpdateUserRequest)`
+  - `UserService#update(Long, UpdateUserRequest)` *[resolved]*
+    - `UserService#findUserOrThrow(Long)` *[resolved]*
+      - `UserRepository#findById(Long)` *[external - Spring Data JPA]*
+      - `Optional#orElseThrow(Supplier)` *[control - Optional]*
+        - optional present:
+        - optional empty: *(terminates)*
+          - lambda `() -> new BusinessException(ErrorCode.USER_NOT_FOUND)`:
+            - `BusinessException#<init>(ErrorCode)` *[resolved]*
+              - `Unknown#getDefaultMessage()` *[unresolved]* - receiver type unknown
+    - `User#getActive()` *[resolved]*
+    - `Boolean#equals(_)` *[external - JDK]*
+    - `UpdateUserRequest#getEmail()` *[resolved]*
+    - if Boolean.FALSE.equals(user.getActive()) && request.getEmail() != null: *(terminates)*
+      - `BusinessException#<init>(ErrorCode)` *(see above)*
+    - `UpdateUserRequest#getEmail()` *[resolved]*
+    - `UpdateUserRequest#getEmail()` *[resolved]*
+    - `User#getEmail()` *[resolved]*
+    - `String#equalsIgnoreCase(_)` *[external - JDK]*
+    - if request.getEmail() != null &&
+                !request.getEmail().equalsIgnoreCase(user.getEmail()):
+      - `UpdateUserRequest#getEmail()` *[resolved]*
+      - `UserService#validateEmailUniqueness(String)` *[resolved]*
+        - `Normalizers#normalizeEmail(String)` *[resolved]*
+          - if email == null: *(terminates)*
+          - `String#trim()` *[external - JDK]*
+          - `String#toLowerCase()` *[external - JDK]*
+        - `UserRepository#existsByEmail(String)` *[external - Spring Data JPA]*
+        - if repository.existsByEmail(normalized): *(terminates)*
+          - `BusinessException#<init>(ErrorCode)` *(see above)*
+      - `UpdateUserRequest#getEmail()` *[resolved]*
+      - `Normalizers#normalizeEmail(String)` *(see above)*
+      - `User#setEmail(String)` *[resolved]*
+    - `UpdateUserRequest#getName()` *[resolved]*
+    - if request.getName() != null:
+      - `UpdateUserRequest#getName()` *[resolved]*
+      - `String#trim()` *[external - JDK]*
+      - `User#setName(String)` *[resolved]*
+    - `UpdateUserRequest#getAge()` *[resolved]*
+    - if request.getAge() != null:
+      - `UpdateUserRequest#getAge()` *[resolved]*
+      - if request.getAge() < 18: *(terminates)*
+        - `BusinessException#<init>(ErrorCode)` *(see above)*
+      - `UpdateUserRequest#getAge()` *[resolved]*
+      - `User#setAge(Integer)` *[resolved]*
+    - `UpdateUserRequest#getActive()` *[resolved]*
+    - if request.getActive() != null:
+      - `UpdateUserRequest#getActive()` *[resolved]*
+      - `User#setActive(Boolean)` *[resolved]*
+    - `UserRepository#save(User)` *[external - Spring Data JPA]*
+    - `UserService#toResponse(User)` *[resolved]*
+      - `User#getId()` *[resolved]*
+      - `User#getName()` *[resolved]*
+      - `User#getEmail()` *[resolved]*
+      - `User#getAge()` *[resolved]*
+      - `User#getActive()` *[resolved]*
+      - `UserResponse#<init>(Long, String, String, Integer, Boolean)` *[resolved]*
+
+## Inputs
+
+- `id: Long` *(path variable)*
+- `request: UpdateUserRequest` *(request body)*
+
+## Unresolved / external
+
+- `Boolean#equals(_)` - `external` (JDK)
+- `String#equalsIgnoreCase(_)` - `external` (JDK)
+- `String#toLowerCase()` - `external` (JDK)
+- `String#trim()` - `external` (JDK)
+- `UserRepository#existsByEmail(String)` - `external` (Spring Data JPA)
+- `UserRepository#findById(Long)` - `external` (Spring Data JPA)
+- `UserRepository#save(User)` - `external` (Spring Data JPA)
+- `Unknown#getDefaultMessage()` - `unresolved` (receiver type unknown)
+
+## Notes
+
+- Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
+- Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.
+- Optional present/empty behavior is rendered structurally, but JFM does not predict which arm runs for a request.
+- AOP, @Transactional, @ControllerAdvice, DI qualifiers, Lombok, and Bean Validation are not modeled.
+- Repeated subtrees elided after first appearance (see above).

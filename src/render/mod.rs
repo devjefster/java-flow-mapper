@@ -1,0 +1,18 @@
+mod common;
+mod json;
+mod markdown;
+mod mermaid;
+
+use crate::model::{Flow, Format};
+
+/// Render-time `max_depth` trims output only; it is independent from
+/// `flow::MAX_DEPTH`, which protects graph construction from runaway recursion.
+/// Control nodes (branches, loops, lambda wrappers, and arms) do not count
+/// toward render depth; only calls do.
+pub fn render(flow: &Flow, format: Format, max_depth: Option<usize>) -> String {
+    match format {
+        Format::Markdown => markdown::render(flow, max_depth),
+        Format::Json => json::render(flow, max_depth),
+        Format::Mermaid => mermaid::render(flow, max_depth),
+    }
+}

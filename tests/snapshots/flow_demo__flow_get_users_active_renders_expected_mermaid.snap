@@ -1,0 +1,53 @@
+---
+source: tests/flow_demo.rs
+expression: stdout
+---
+```mermaid
+sequenceDiagram
+    participant UserController
+    participant UserService
+    participant UserRepository
+    participant ArrayList
+    participant User
+    participant Boolean
+    participant UserResponse
+    participant List
+    participant IllegalStateException
+    UserController->>UserService: findActive()
+    UserService->>UserRepository: findAll()
+    Note over UserRepository: external (Spring Data JPA)
+    UserService->>ArrayList: <init>(...)
+    Note over ArrayList: external (JDK)
+    loop for-each User user : users
+    UserService->>User: getActive()
+    UserService->>Boolean: equals(_)
+    Note over Boolean: external (JDK)
+    alt Boolean.TRUE.equals(user.getActive())
+    UserService->>UserService: toResponse(User)
+    UserService->>User: getId()
+    UserService->>User: getName()
+    UserService->>User: getEmail()
+    UserService->>User: getAge()
+    UserService->>User: getActive()
+    UserService->>UserResponse: <init>(...)
+    UserService->>List: add(_)
+    Note over List: external (JDK)
+    end
+    end
+    UserService->>List: forEach(Consumer)
+    Note over List: external (JDK)
+    loop forEach List.forEach
+    List->>UserService: requireResponseEmail(UserResponse)
+    UserService->>UserResponse: getEmail()
+    alt response.getEmail() == null
+    UserService->>IllegalStateException: <init>(...)
+    Note over IllegalStateException: external (JDK)
+    end
+    end
+    %% Notes:
+    %% - Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
+    %% - Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.
+    %% - Optional present/empty behavior is rendered structurally, but JFM does not predict which arm runs for a request.
+    %% - AOP, @Transactional, @ControllerAdvice, DI qualifiers, Lombok, and Bean Validation are not modeled.
+    %% - Return arrows are not rendered: CallNode does not yet track return types.
+```

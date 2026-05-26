@@ -1,0 +1,60 @@
+---
+source: tests/flow_demo.rs
+expression: stdout
+---
+# POST /users
+
+**Controller**: `com.example.demo.controller.UserController#create(CreateUserRequest)`
+**File**: `demo-api/demo/src/main/java/com/example/demo/controller/UserController.java:LINE`
+
+## Call sequence
+
+- `UserController#create(CreateUserRequest)`
+  - `UserService#create(CreateUserRequest)` *[resolved]*
+    - `CreateUserRequest#getEmail()` *[resolved]*
+    - `UserService#validateEmailUniqueness(String)` *[resolved]*
+      - `Normalizers#normalizeEmail(String)` *[resolved]*
+        - if email == null: *(terminates)*
+        - `String#trim()` *[external - JDK]*
+        - `String#toLowerCase()` *[external - JDK]*
+      - `UserRepository#existsByEmail(String)` *[external - Spring Data JPA]*
+      - if repository.existsByEmail(normalized): *(terminates)*
+        - `BusinessException#<init>(ErrorCode)` *[resolved]*
+          - `Unknown#getDefaultMessage()` *[unresolved]* - receiver type unknown
+    - `CreateUserRequest#getAge()` *[resolved]*
+    - if request.getAge() < 18: *(terminates)*
+      - `BusinessException#<init>(ErrorCode)` *(see above)*
+    - `CreateUserRequest#getName()` *[resolved]*
+    - `String#trim()` *[external - JDK]*
+    - `CreateUserRequest#getEmail()` *[resolved]*
+    - `Normalizers#normalizeEmail(String)` *(see above)*
+    - `CreateUserRequest#getAge()` *[resolved]*
+    - `User#<init>(String, String, Integer, Boolean)` *[resolved]*
+    - `UserRepository#save(User)` *[external - Spring Data JPA]*
+    - `UserService#toResponse(User)` *[resolved]*
+      - `User#getId()` *[resolved]*
+      - `User#getName()` *[resolved]*
+      - `User#getEmail()` *[resolved]*
+      - `User#getAge()` *[resolved]*
+      - `User#getActive()` *[resolved]*
+      - `UserResponse#<init>(Long, String, String, Integer, Boolean)` *[resolved]*
+
+## Inputs
+
+- `request: CreateUserRequest` *(request body)*
+
+## Unresolved / external
+
+- `String#toLowerCase()` - `external` (JDK)
+- `String#trim()` - `external` (JDK)
+- `UserRepository#existsByEmail(String)` - `external` (Spring Data JPA)
+- `UserRepository#save(User)` - `external` (Spring Data JPA)
+- `Unknown#getDefaultMessage()` - `unresolved` (receiver type unknown)
+
+## Notes
+
+- Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
+- Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.
+- Optional present/empty behavior is rendered structurally, but JFM does not predict which arm runs for a request.
+- AOP, @Transactional, @ControllerAdvice, DI qualifiers, Lombok, and Bean Validation are not modeled.
+- Repeated subtrees elided after first appearance (see above).

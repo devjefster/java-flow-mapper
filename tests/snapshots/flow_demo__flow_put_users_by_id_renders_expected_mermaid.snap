@@ -1,0 +1,110 @@
+---
+source: tests/flow_demo.rs
+expression: stdout
+---
+```mermaid
+sequenceDiagram
+    participant UserController
+    participant UserService
+    participant UserRepository
+    participant Optional
+    participant BusinessException
+    participant Unknown
+    participant User
+    participant Boolean
+    participant UpdateUserRequest
+    participant String
+    participant Normalizers
+    participant UserResponse
+    UserController->>UserService: update(Long, UpdateUserRequest)
+    UserService->>UserService: findUserOrThrow(Long)
+    UserService->>UserRepository: findById(Long)
+    Note over UserRepository: external (Spring Data JPA)
+    UserService->>Optional: orElseThrow(Supplier)
+    Note over Optional: control flow (Optional)
+    alt optional present
+    else optional empty
+    Optional->>BusinessException: <init>(...)
+    BusinessException->>Unknown: getDefaultMessage()
+    Note over Unknown: unresolved (receiver type unknown)
+    end
+    UserService->>User: getActive()
+    UserService->>Boolean: equals(_)
+    Note over Boolean: external (JDK)
+    UserService->>UpdateUserRequest: getEmail()
+    alt Boolean.FALSE.equals(user.getActive()) && request.getEmail() != null
+    UserService->>BusinessException: <init>(...)
+    BusinessException->>Unknown: getDefaultMessage()
+    Note over Unknown: unresolved (receiver type unknown)
+    end
+    UserService->>UpdateUserRequest: getEmail()
+    UserService->>UpdateUserRequest: getEmail()
+    UserService->>User: getEmail()
+    UserService->>String: equalsIgnoreCase(_)
+    Note over String: external (JDK)
+    alt request.getEmail() != null &&                 !request.getEmail().equalsIgnoreCase(user.getEmail())
+    UserService->>UpdateUserRequest: getEmail()
+    UserService->>UserService: validateEmailUniqueness(String)
+    UserService->>Normalizers: normalizeEmail(String)
+    alt email == null
+    end
+    Normalizers->>String: trim()
+    Note over String: external (JDK)
+    Normalizers->>String: toLowerCase()
+    Note over String: external (JDK)
+    UserService->>UserRepository: existsByEmail(String)
+    Note over UserRepository: external (Spring Data JPA)
+    alt repository.existsByEmail(normalized)
+    UserService->>BusinessException: <init>(...)
+    BusinessException->>Unknown: getDefaultMessage()
+    Note over Unknown: unresolved (receiver type unknown)
+    end
+    UserService->>UpdateUserRequest: getEmail()
+    UserService->>Normalizers: normalizeEmail(String)
+    alt email == null
+    end
+    Normalizers->>String: trim()
+    Note over String: external (JDK)
+    Normalizers->>String: toLowerCase()
+    Note over String: external (JDK)
+    UserService->>User: setEmail(String)
+    end
+    UserService->>UpdateUserRequest: getName()
+    alt request.getName() != null
+    UserService->>UpdateUserRequest: getName()
+    UserService->>String: trim()
+    Note over String: external (JDK)
+    UserService->>User: setName(String)
+    end
+    UserService->>UpdateUserRequest: getAge()
+    alt request.getAge() != null
+    UserService->>UpdateUserRequest: getAge()
+    alt request.getAge() < 18
+    UserService->>BusinessException: <init>(...)
+    BusinessException->>Unknown: getDefaultMessage()
+    Note over Unknown: unresolved (receiver type unknown)
+    end
+    UserService->>UpdateUserRequest: getAge()
+    UserService->>User: setAge(Integer)
+    end
+    UserService->>UpdateUserRequest: getActive()
+    alt request.getActive() != null
+    UserService->>UpdateUserRequest: getActive()
+    UserService->>User: setActive(Boolean)
+    end
+    UserService->>UserRepository: save(User)
+    Note over UserRepository: external (Spring Data JPA)
+    UserService->>UserService: toResponse(User)
+    UserService->>User: getId()
+    UserService->>User: getName()
+    UserService->>User: getEmail()
+    UserService->>User: getAge()
+    UserService->>User: getActive()
+    UserService->>UserResponse: <init>(...)
+    %% Notes:
+    %% - Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
+    %% - Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.
+    %% - Optional present/empty behavior is rendered structurally, but JFM does not predict which arm runs for a request.
+    %% - AOP, @Transactional, @ControllerAdvice, DI qualifiers, Lombok, and Bean Validation are not modeled.
+    %% - Return arrows are not rendered: CallNode does not yet track return types.
+```

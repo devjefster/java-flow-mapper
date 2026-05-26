@@ -1,0 +1,190 @@
+---
+source: tests/flow_demo.rs
+expression: stdout
+---
+{
+  "endpoint": {
+    "verb": "GET",
+    "path": "/users/active"
+  },
+  "controller": {
+    "method": "com.example.demo.controller.UserController#findActive()",
+    "file": "demo-api/demo/src/main/java/com/example/demo/controller/UserController.java",
+    "line": LINE
+  },
+  "inputs": [],
+  "call_sequence": [
+    {
+      "type": "call",
+      "method": "com.example.demo.service.UserService#findActive()",
+      "confidence": "resolved",
+      "calls": [
+        {
+          "type": "call",
+          "method": "com.example.demo.repository.UserRepository#findAll()",
+          "confidence": "external",
+          "external_kind": "spring-data",
+          "calls": []
+        },
+        {
+          "type": "call",
+          "method": "ArrayList#<init>()",
+          "confidence": "external",
+          "external_kind": "jdk",
+          "calls": []
+        },
+        {
+          "type": "loop",
+          "kind": "enhanced_for",
+          "source": "User user : users",
+          "condition": [],
+          "body": [
+            {
+              "type": "call",
+              "method": "com.example.demo.entity.User#getActive()",
+              "confidence": "resolved",
+              "calls": []
+            },
+            {
+              "type": "call",
+              "method": "Boolean#equals(_)",
+              "confidence": "external",
+              "external_kind": "jdk",
+              "calls": []
+            },
+            {
+              "type": "branch",
+              "kind": "if",
+              "condition_src": "Boolean.TRUE.equals(user.getActive())",
+              "arms": [
+                {
+                  "label": "then",
+                  "terminates": false,
+                  "children": [
+                    {
+                      "type": "call",
+                      "method": "com.example.demo.service.UserService#toResponse(User)",
+                      "confidence": "resolved",
+                      "scope": "intra-class",
+                      "calls": [
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.entity.User#getId()",
+                          "confidence": "resolved",
+                          "calls": []
+                        },
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.entity.User#getName()",
+                          "confidence": "resolved",
+                          "calls": []
+                        },
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.entity.User#getEmail()",
+                          "confidence": "resolved",
+                          "calls": []
+                        },
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.entity.User#getAge()",
+                          "confidence": "resolved",
+                          "calls": []
+                        },
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.entity.User#getActive()",
+                          "confidence": "resolved",
+                          "calls": []
+                        },
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.dto.UserResponse#<init>(Long, String, String, Integer, Boolean)",
+                          "confidence": "resolved",
+                          "calls": []
+                        }
+                      ]
+                    },
+                    {
+                      "type": "call",
+                      "method": "List#add(_)",
+                      "confidence": "external",
+                      "external_kind": "jdk",
+                      "calls": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "update": []
+        },
+        {
+          "type": "call",
+          "method": "List#forEach(Consumer)",
+          "confidence": "external",
+          "external_kind": "jdk",
+          "calls": [
+            {
+              "type": "loop",
+              "kind": "for_each",
+              "source": "List.forEach",
+              "condition": [],
+              "body": [
+                {
+                  "type": "lambda",
+                  "kind": "method_ref",
+                  "source": "this::requireResponseEmail",
+                  "children": [
+                    {
+                      "type": "call",
+                      "method": "com.example.demo.service.UserService#requireResponseEmail(UserResponse)",
+                      "confidence": "resolved",
+                      "scope": "intra-class",
+                      "calls": [
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.dto.UserResponse#getEmail()",
+                          "confidence": "resolved",
+                          "calls": []
+                        },
+                        {
+                          "type": "branch",
+                          "kind": "if",
+                          "condition_src": "response.getEmail() == null",
+                          "arms": [
+                            {
+                              "label": "then",
+                              "terminates": true,
+                              "children": [
+                                {
+                                  "type": "call",
+                                  "method": "IllegalStateException#<init>(_)",
+                                  "confidence": "external",
+                                  "external_kind": "jdk",
+                                  "calls": []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "update": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "unresolved": [],
+  "notes": [
+    "Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.",
+    "Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.",
+    "Optional present/empty behavior is rendered structurally, but JFM does not predict which arm runs for a request.",
+    "AOP, @Transactional, @ControllerAdvice, DI qualifiers, Lombok, and Bean Validation are not modeled."
+  ]
+}

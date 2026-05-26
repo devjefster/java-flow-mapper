@@ -1,0 +1,68 @@
+---
+source: tests/flow_demo.rs
+expression: stdout
+---
+```mermaid
+sequenceDiagram
+    participant UserController
+    participant UserService
+    participant CreateUserRequest
+    participant Normalizers
+    participant String
+    participant UserRepository
+    participant BusinessException
+    participant Unknown
+    participant User
+    participant UserResponse
+    UserController->>UserService: create(CreateUserRequest)
+    UserService->>CreateUserRequest: getEmail()
+    UserService->>UserService: validateEmailUniqueness(String)
+    UserService->>Normalizers: normalizeEmail(String)
+    alt email == null
+    end
+    Normalizers->>String: trim()
+    Note over String: external (JDK)
+    Normalizers->>String: toLowerCase()
+    Note over String: external (JDK)
+    UserService->>UserRepository: existsByEmail(String)
+    Note over UserRepository: external (Spring Data JPA)
+    alt repository.existsByEmail(normalized)
+    UserService->>BusinessException: <init>(...)
+    BusinessException->>Unknown: getDefaultMessage()
+    Note over Unknown: unresolved (receiver type unknown)
+    end
+    UserService->>CreateUserRequest: getAge()
+    alt request.getAge() < 18
+    UserService->>BusinessException: <init>(...)
+    BusinessException->>Unknown: getDefaultMessage()
+    Note over Unknown: unresolved (receiver type unknown)
+    end
+    UserService->>CreateUserRequest: getName()
+    UserService->>String: trim()
+    Note over String: external (JDK)
+    UserService->>CreateUserRequest: getEmail()
+    UserService->>Normalizers: normalizeEmail(String)
+    alt email == null
+    end
+    Normalizers->>String: trim()
+    Note over String: external (JDK)
+    Normalizers->>String: toLowerCase()
+    Note over String: external (JDK)
+    UserService->>CreateUserRequest: getAge()
+    UserService->>User: <init>(...)
+    UserService->>UserRepository: save(User)
+    Note over UserRepository: external (Spring Data JPA)
+    UserService->>UserService: toResponse(User)
+    UserService->>User: getId()
+    UserService->>User: getName()
+    UserService->>User: getEmail()
+    UserService->>User: getAge()
+    UserService->>User: getActive()
+    UserService->>UserResponse: <init>(...)
+    %% Notes:
+    %% - Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
+    %% - Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.
+    %% - Optional present/empty behavior is rendered structurally, but JFM does not predict which arm runs for a request.
+    %% - AOP, @Transactional, @ControllerAdvice, DI qualifiers, Lombok, and Bean Validation are not modeled.
+    %% - Return arrows are not rendered: CallNode does not yet track return types.
+```

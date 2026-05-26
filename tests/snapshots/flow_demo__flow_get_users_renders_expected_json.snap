@@ -1,0 +1,121 @@
+---
+source: tests/flow_demo.rs
+expression: stdout
+---
+{
+  "endpoint": {
+    "verb": "GET",
+    "path": "/users"
+  },
+  "controller": {
+    "method": "com.example.demo.controller.UserController#findAll()",
+    "file": "demo-api/demo/src/main/java/com/example/demo/controller/UserController.java",
+    "line": LINE
+  },
+  "inputs": [],
+  "call_sequence": [
+    {
+      "type": "call",
+      "method": "com.example.demo.service.UserService#findAll()",
+      "confidence": "resolved",
+      "calls": [
+        {
+          "type": "call",
+          "method": "com.example.demo.repository.UserRepository#findAll()",
+          "confidence": "external",
+          "external_kind": "spring-data",
+          "calls": []
+        },
+        {
+          "type": "call",
+          "method": "List#stream()",
+          "confidence": "external",
+          "external_kind": "jdk",
+          "calls": []
+        },
+        {
+          "type": "call",
+          "method": "Stream#map(Function)",
+          "confidence": "external",
+          "external_kind": "jdk",
+          "calls": [
+            {
+              "type": "loop",
+              "kind": "stream",
+              "source": "Stream.map",
+              "condition": [],
+              "body": [
+                {
+                  "type": "lambda",
+                  "kind": "method_ref",
+                  "source": "this::toResponse",
+                  "children": [
+                    {
+                      "type": "call",
+                      "method": "com.example.demo.service.UserService#toResponse(User)",
+                      "confidence": "resolved",
+                      "scope": "intra-class",
+                      "calls": [
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.entity.User#getId()",
+                          "confidence": "resolved",
+                          "calls": []
+                        },
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.entity.User#getName()",
+                          "confidence": "resolved",
+                          "calls": []
+                        },
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.entity.User#getEmail()",
+                          "confidence": "resolved",
+                          "calls": []
+                        },
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.entity.User#getAge()",
+                          "confidence": "resolved",
+                          "calls": []
+                        },
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.entity.User#getActive()",
+                          "confidence": "resolved",
+                          "calls": []
+                        },
+                        {
+                          "type": "call",
+                          "method": "com.example.demo.dto.UserResponse#<init>(Long, String, String, Integer, Boolean)",
+                          "confidence": "resolved",
+                          "calls": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "update": []
+            }
+          ]
+        },
+        {
+          "type": "call",
+          "method": "Stream#toList()",
+          "confidence": "external",
+          "external_kind": "jdk",
+          "calls": []
+        }
+      ]
+    }
+  ],
+  "unresolved": [],
+  "notes": [
+    "Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.",
+    "Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.",
+    "Optional present/empty behavior is rendered structurally, but JFM does not predict which arm runs for a request.",
+    "AOP, @Transactional, @ControllerAdvice, DI qualifiers, Lombok, and Bean Validation are not modeled."
+  ]
+}

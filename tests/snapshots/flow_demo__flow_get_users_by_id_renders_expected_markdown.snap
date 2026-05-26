@@ -1,0 +1,44 @@
+---
+source: tests/flow_demo.rs
+expression: stdout
+---
+# GET /users/{id}
+
+**Controller**: `com.example.demo.controller.UserController#findById(Long)`
+**File**: `demo-api/demo/src/main/java/com/example/demo/controller/UserController.java:LINE`
+
+## Call sequence
+
+- `UserController#findById(Long)`
+  - `UserService#findById(Long)` *[resolved]*
+    - `UserService#findUserOrThrow(Long)` *[resolved]*
+      - `UserRepository#findById(Long)` *[external - Spring Data JPA]*
+      - `Optional#orElseThrow(Supplier)` *[control - Optional]*
+        - optional present:
+        - optional empty: *(terminates)*
+          - lambda `() -> new BusinessException(ErrorCode.USER_NOT_FOUND)`:
+            - `BusinessException#<init>(ErrorCode)` *[resolved]*
+              - `Unknown#getDefaultMessage()` *[unresolved]* - receiver type unknown
+    - `UserService#toResponse(User)` *[resolved]*
+      - `User#getId()` *[resolved]*
+      - `User#getName()` *[resolved]*
+      - `User#getEmail()` *[resolved]*
+      - `User#getAge()` *[resolved]*
+      - `User#getActive()` *[resolved]*
+      - `UserResponse#<init>(Long, String, String, Integer, Boolean)` *[resolved]*
+
+## Inputs
+
+- `id: Long` *(path variable)*
+
+## Unresolved / external
+
+- `UserRepository#findById(Long)` - `external` (Spring Data JPA)
+- `Unknown#getDefaultMessage()` - `unresolved` (receiver type unknown)
+
+## Notes
+
+- Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
+- Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.
+- Optional present/empty behavior is rendered structurally, but JFM does not predict which arm runs for a request.
+- AOP, @Transactional, @ControllerAdvice, DI qualifiers, Lombok, and Bean Validation are not modeled.

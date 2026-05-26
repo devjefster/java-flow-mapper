@@ -1,0 +1,21 @@
+---
+source: tests/flow_demo.rs
+expression: stdout
+---
+```mermaid
+sequenceDiagram
+    participant UserController
+    participant UserService
+    UserController->>UserService: findById(Long)
+    UserService->>UserService: findUserOrThrow(Long)
+    Note over UserService: (truncated, 3 more levels)
+    UserService->>UserService: toResponse(User)
+    Note over UserService: (truncated, 1 more level)
+    %% Notes:
+    %% - Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
+    %% - Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.
+    %% - Optional present/empty behavior is rendered structurally, but JFM does not predict which arm runs for a request.
+    %% - AOP, @Transactional, @ControllerAdvice, DI qualifiers, Lombok, and Bean Validation are not modeled.
+    %% - Return arrows are not rendered: CallNode does not yet track return types.
+    %% - Output truncated at depth 2 (see --max-depth).
+```

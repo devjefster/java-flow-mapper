@@ -1,0 +1,45 @@
+---
+source: tests/flow_demo.rs
+expression: stdout
+---
+# GET /users
+
+**Controller**: `com.example.demo.controller.UserController#findAll()`
+**File**: `demo-api/demo/src/main/java/com/example/demo/controller/UserController.java:LINE`
+
+## Call sequence
+
+- `UserController#findAll()`
+  - `UserService#findAll()` *[resolved]*
+    - `UserRepository#findAll()` *[external - Spring Data JPA]*
+    - `List#stream()` *[external - JDK]*
+    - `Stream#map(Function)` *[external - JDK]*
+      - loop stream `Stream.map`:
+        - body:
+          - method ref `this::toResponse`:
+            - `UserService#toResponse(User)` *[resolved]*
+              - `User#getId()` *[resolved]*
+              - `User#getName()` *[resolved]*
+              - `User#getEmail()` *[resolved]*
+              - `User#getAge()` *[resolved]*
+              - `User#getActive()` *[resolved]*
+              - `UserResponse#<init>(Long, String, String, Integer, Boolean)` *[resolved]*
+    - `Stream#toList()` *[external - JDK]*
+
+## Inputs
+
+- None
+
+## Unresolved / external
+
+- `List#stream()` - `external` (JDK)
+- `Stream#map(Function)` - `external` (JDK)
+- `Stream#toList()` - `external` (JDK)
+- `UserRepository#findAll()` - `external` (Spring Data JPA)
+
+## Notes
+
+- Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
+- Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.
+- Optional present/empty behavior is rendered structurally, but JFM does not predict which arm runs for a request.
+- AOP, @Transactional, @ControllerAdvice, DI qualifiers, Lombok, and Bean Validation are not modeled.
