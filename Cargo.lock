@@ -296,21 +296,63 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
-name = "jfm"
+name = "jfm-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
  "clap",
  "insta",
- "serde",
- "serde_json",
- "thiserror",
- "tracing",
+ "jfm-flow",
+ "jfm-model",
+ "jfm-parser",
+ "jfm-render",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "jfm-flow"
+version = "0.1.0"
+dependencies = [
+ "jfm-model",
+ "jfm-spring",
+ "thiserror",
+]
+
+[[package]]
+name = "jfm-model"
+version = "0.1.0"
+dependencies = [
+ "clap",
+]
+
+[[package]]
+name = "jfm-parser"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "jfm-model",
+ "tracing",
  "tree-sitter",
  "tree-sitter-java",
  "walkdir",
+]
+
+[[package]]
+name = "jfm-render"
+version = "0.1.0"
+dependencies = [
+ "jfm-model",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "jfm-spring"
+version = "0.1.0"
+dependencies = [
+ "jfm-model",
+ "tracing",
 ]
 
 [[package]]

@@ -1,5 +1,7 @@
 //! Output rendering dispatch for supported flow formats.
 
+pub use jfm_model as model;
+
 mod common;
 mod json;
 mod markdown;
@@ -10,7 +12,7 @@ use crate::model::{Diagram, Flow, Format};
 
 /// Render a flow in the requested format.
 ///
-/// Render-time `max_depth` trims output only; it is independent from
+/// Render-time `max_depth` trims output only; it is independent of
 /// `flow::MAX_DEPTH`, which protects graph construction from runaway recursion.
 /// Control nodes (branches, loops, lambda wrappers, and arms) do not count
 /// toward render depth; only calls do.

@@ -1,11 +1,23 @@
-[package]
-name = "jfm"
+[workspace]
+members = [
+    "crates/jfm-cli",
+    "crates/jfm-flow",
+    "crates/jfm-model",
+    "crates/jfm-parser",
+    "crates/jfm-render",
+    "crates/jfm-spring",
+]
+resolver = "3"
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
 
-[dependencies]
+[workspace.dependencies]
 anyhow = "1"
+assert_cmd = "2"
 clap = { version = "4.6.1", features = ["derive"] }
+insta = { version = "1", features = ["filters"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
@@ -15,6 +27,9 @@ tree-sitter = "0.26.8"
 tree-sitter-java = "0.23.5"
 walkdir = "2.5.0"
 
-[dev-dependencies]
-assert_cmd = "2"
-insta = { version = "1", features = ["filters"] }
+jfm-cli = { path = "crates/jfm-cli" }
+jfm-flow = { path = "crates/jfm-flow" }
+jfm-model = { path = "crates/jfm-model" }
+jfm-parser = { path = "crates/jfm-parser" }
+jfm-render = { path = "crates/jfm-render" }
+jfm-spring = { path = "crates/jfm-spring" }

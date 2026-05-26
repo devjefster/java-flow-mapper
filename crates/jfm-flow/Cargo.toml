@@ -1,0 +1,9 @@
+[package]
+name = "jfm-flow"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+jfm-model.workspace = true
+jfm-spring.workspace = true
+thiserror.workspace = true

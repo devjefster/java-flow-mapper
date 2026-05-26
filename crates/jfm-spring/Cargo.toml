@@ -1,0 +1,8 @@
+[package]
+name = "jfm-spring"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+jfm-model.workspace = true
+tracing.workspace = true
