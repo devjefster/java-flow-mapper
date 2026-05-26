@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use super::{ParsedFile, parse_file};
-use crate::model::{BodyElement, BranchKind, ClassKind, LoopKind, MethodInfo};
+use crate::model::{BodyElement, BranchKind, ClassKind, LoopExecution, LoopKind, MethodInfo};
 
 #[test]
 fn parses_if_without_else_and_marks_throwing_then_arm() {
@@ -166,9 +166,11 @@ fn parses_while_loop_with_condition_and_body() {
         panic!("expected loop");
     };
     assert_eq!(loop_node.kind, LoopKind::While);
+    assert_eq!(loop_node.execution, LoopExecution::ZeroOrMore);
     assert_eq!(loop_node.source, "ready()");
     assert_eq!(call_name(&loop_node.condition_calls[0]), "ready");
-    assert_eq!(call_name(&loop_node.body[0]), "work");
+    assert_eq!(loop_node.arms[0].label, "body");
+    assert_eq!(call_name(&loop_node.arms[0].body[0]), "work");
 }
 
 #[test]
@@ -190,8 +192,10 @@ fn parses_do_while_loop_with_body_before_condition() {
         panic!("expected loop");
     };
     assert_eq!(loop_node.kind, LoopKind::DoWhile);
+    assert_eq!(loop_node.execution, LoopExecution::OneOrMore);
     assert_eq!(loop_node.source, "again()");
-    assert_eq!(call_name(&loop_node.body[0]), "work");
+    assert_eq!(loop_node.arms[0].label, "body");
+    assert_eq!(call_name(&loop_node.arms[0].body[0]), "work");
     assert_eq!(call_name(&loop_node.condition_calls[0]), "again");
 }
 
@@ -213,15 +217,22 @@ fn parses_classic_for_loop_header_body_and_update_calls() {
     let BodyElement::Loop(loop_node) = &method.body[0] else {
         panic!("expected loop");
     };
+    let init_call_names = loop_node
+        .init_calls
+        .iter()
+        .map(call_name)
+        .collect::<Vec<_>>();
     let condition_call_names = loop_node
         .condition_calls
         .iter()
         .map(call_name)
         .collect::<Vec<_>>();
     assert_eq!(loop_node.kind, LoopKind::For);
-    assert!(condition_call_names.contains(&"start"));
+    assert_eq!(loop_node.execution, LoopExecution::ZeroOrMore);
+    assert!(init_call_names.contains(&"start"));
     assert!(condition_call_names.contains(&"limit"));
-    assert_eq!(call_name(&loop_node.body[0]), "work");
+    assert_eq!(loop_node.arms[0].label, "body");
+    assert_eq!(call_name(&loop_node.arms[0].body[0]), "work");
     assert_eq!(call_name(&loop_node.update_calls[0]), "next");
 }
 
@@ -246,10 +257,12 @@ fn parses_enhanced_for_loop_with_loop_local() {
         panic!("expected loop");
     };
     assert_eq!(loop_node.kind, LoopKind::EnhancedFor);
+    assert_eq!(loop_node.execution, LoopExecution::ZeroOrMore);
     assert_eq!(loop_node.source, "User user : users");
     assert_eq!(loop_node.locals[0].name, "user");
     assert_eq!(loop_node.locals[0].ty.raw, "User");
-    assert_eq!(call_name(&loop_node.body[0]), "getEmail");
+    assert_eq!(loop_node.arms[0].label, "body");
+    assert_eq!(call_name(&loop_node.arms[0].body[0]), "getEmail");
 }
 
 #[test]
@@ -272,7 +285,7 @@ fn preserves_nested_branch_inside_loop() {
     let BodyElement::Loop(loop_node) = &method.body[0] else {
         panic!("expected loop");
     };
-    let BodyElement::Branch(branch) = &loop_node.body[0] else {
+    let BodyElement::Branch(branch) = &loop_node.arms[0].body[0] else {
         panic!("expected branch inside loop");
     };
     assert_eq!(call_name(&branch.condition_calls[0]), "allowed");
@@ -303,7 +316,7 @@ fn preserves_loop_inside_branch_arm() {
         panic!("expected loop inside branch");
     };
     assert_eq!(loop_node.kind, LoopKind::While);
-    assert_eq!(call_name(&loop_node.body[0]), "work");
+    assert_eq!(call_name(&loop_node.arms[0].body[0]), "work");
 }
 
 #[test]

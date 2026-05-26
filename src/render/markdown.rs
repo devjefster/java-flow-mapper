@@ -9,8 +9,9 @@ use crate::model::{
 };
 
 use super::common::{
-    control_kind_human_label, external_kind_human_label, loop_kind_human_label,
-    max_remaining_depth, short_method, single_line, truncated_marker, truncated_note,
+    control_kind_human_label, external_kind_human_label, loop_execution_label,
+    loop_kind_human_label, max_remaining_depth, short_method, single_line, truncated_marker,
+    truncated_note,
 };
 
 const DEFAULT_MAX_DEPTH: usize = 5;
@@ -247,12 +248,22 @@ fn render_loop(
     let indent = "  ".repeat(indent_depth);
     writeln!(
         out,
-        "{indent}- loop {} `{}`:",
+        "{indent}- loop {} `{}`: *(may execute {} times)*",
         loop_kind_human_label(loop_node.kind),
-        single_line(&loop_node.source)
+        single_line(&loop_node.source),
+        loop_execution_label(loop_node.execution)
     )
     .unwrap();
 
+    render_loop_section(
+        out,
+        "init",
+        &loop_node.init,
+        indent_depth,
+        section_call_depth,
+        max_depth,
+        state,
+    );
     render_loop_section(
         out,
         "condition",
@@ -262,15 +273,17 @@ fn render_loop(
         max_depth,
         state,
     );
-    render_loop_section(
-        out,
-        "body",
-        &loop_node.body,
-        indent_depth,
-        section_call_depth,
-        max_depth,
-        state,
-    );
+    for arm in &loop_node.arms {
+        render_loop_section(
+            out,
+            &arm.label,
+            &arm.children,
+            indent_depth,
+            section_call_depth,
+            max_depth,
+            state,
+        );
+    }
     render_loop_section(
         out,
         "update",

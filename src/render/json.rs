@@ -4,8 +4,8 @@ use serde::Serialize;
 
 use crate::model::{
     BranchKind, BranchNode, CallNode, Confidence, ControlKind, ExternalKind, Flow, FlowNode,
-    HttpVerb, LambdaKind, LambdaNode, LoopKind, LoopNode, ParamInfo, ParamSource, Scope,
-    UnresolvedRef,
+    HttpVerb, LambdaKind, LambdaNode, LoopExecution, LoopKind, LoopNode, ParamInfo, ParamSource,
+    Scope, UnresolvedRef,
 };
 
 use super::common::{max_remaining_depth, truncated_note};
@@ -132,9 +132,17 @@ struct LambdaDto<'a> {
 struct LoopDto<'a> {
     kind: &'static str,
     source: &'a str,
+    execution: &'static str,
+    init: Vec<FlowNodeDto<'a>>,
     condition: Vec<FlowNodeDto<'a>>,
-    body: Vec<FlowNodeDto<'a>>,
+    arms: Vec<LoopArmDto<'a>>,
     update: Vec<FlowNodeDto<'a>>,
+}
+
+#[derive(Serialize)]
+struct LoopArmDto<'a> {
+    label: &'a str,
+    children: Vec<FlowNodeDto<'a>>,
 }
 
 #[derive(Serialize)]
@@ -186,8 +194,17 @@ fn loop_node_dto<'a>(
     LoopDto {
         kind: loop_kind_json_label(loop_node.kind),
         source: &loop_node.source,
+        execution: loop_execution_json_label(loop_node.execution),
+        init: flow_node_dtos(&loop_node.init, call_depth, max_depth, truncated),
         condition: flow_node_dtos(&loop_node.condition, call_depth, max_depth, truncated),
-        body: flow_node_dtos(&loop_node.body, call_depth, max_depth, truncated),
+        arms: loop_node
+            .arms
+            .iter()
+            .map(|arm| LoopArmDto {
+                label: &arm.label,
+                children: flow_node_dtos(&arm.children, call_depth, max_depth, truncated),
+            })
+            .collect(),
         update: flow_node_dtos(&loop_node.update, call_depth, max_depth, truncated),
     }
 }
@@ -347,6 +364,13 @@ fn loop_kind_json_label(kind: LoopKind) -> &'static str {
         LoopKind::DoWhile => "do_while",
         LoopKind::ForEach => "for_each",
         LoopKind::Stream => "stream",
+    }
+}
+
+fn loop_execution_json_label(execution: LoopExecution) -> &'static str {
+    match execution {
+        LoopExecution::ZeroOrMore => "0..n",
+        LoopExecution::OneOrMore => "1..n",
     }
 }
 

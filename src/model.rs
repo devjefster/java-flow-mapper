@@ -247,10 +247,19 @@ pub struct BranchArmSyntax {
 pub struct LoopSyntax {
     pub kind: LoopKind,
     pub source: String,
+    pub execution: LoopExecution,
+    pub init_calls: Vec<BodyElement>,
     pub condition_calls: Vec<BodyElement>,
-    pub body: Vec<BodyElement>,
+    pub arms: Vec<LoopArmSyntax>,
     pub update_calls: Vec<BodyElement>,
     pub locals: Vec<LoopLocal>,
+}
+
+/// Parsed loop arm before call targets are resolved.
+#[derive(Clone, Debug)]
+pub struct LoopArmSyntax {
+    pub label: String,
+    pub body: Vec<BodyElement>,
 }
 
 /// Loop-scoped local variable, currently used for enhanced-for variables.
@@ -359,9 +368,18 @@ pub struct BranchNode {
 pub struct LoopNode {
     pub kind: LoopKind,
     pub source: String,
+    pub execution: LoopExecution,
+    pub init: Vec<FlowNode>,
     pub condition: Vec<FlowNode>,
-    pub body: Vec<FlowNode>,
+    pub arms: Vec<LoopArm>,
     pub update: Vec<FlowNode>,
+}
+
+/// Expanded loop arm in the flow graph.
+#[derive(Clone, Debug)]
+pub struct LoopArm {
+    pub label: String,
+    pub children: Vec<FlowNode>,
 }
 
 /// Labeled branch arm with termination metadata.
@@ -396,6 +414,13 @@ pub enum LoopKind {
     DoWhile,
     ForEach,
     Stream,
+}
+
+/// Conservative execution cardinality for loop bodies.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LoopExecution {
+    ZeroOrMore,
+    OneOrMore,
 }
 
 /// Scope metadata for calls that need renderer-visible context.

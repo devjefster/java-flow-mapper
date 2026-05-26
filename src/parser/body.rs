@@ -5,7 +5,8 @@ use tree_sitter::Node;
 
 use crate::model::{
     BodyElement, BranchArmSyntax, BranchKind, BranchSyntax, CallSite, LambdaKind, LambdaSyntax,
-    LoopKind, LoopLocal, LoopSyntax, ParamInfo, ReceiverKind, TypeRef,
+    LoopArmSyntax, LoopExecution, LoopKind, LoopLocal, LoopSyntax, ParamInfo, ReceiverKind,
+    TypeRef,
 };
 
 use super::annotations::param_source;
@@ -333,8 +334,10 @@ pub fn parse_loop_statement(node: Node<'_>, source: &str) -> LoopSyntax {
         _ => LoopSyntax {
             kind: LoopKind::For,
             source: header_source(node, source),
+            execution: LoopExecution::ZeroOrMore,
+            init_calls: Vec::new(),
             condition_calls: Vec::new(),
-            body: Vec::new(),
+            arms: Vec::new(),
             update_calls: Vec::new(),
             locals: Vec::new(),
         },
@@ -342,21 +345,22 @@ pub fn parse_loop_statement(node: Node<'_>, source: &str) -> LoopSyntax {
 }
 
 fn parse_for_statement(node: Node<'_>, source: &str) -> LoopSyntax {
-    let mut condition_calls = Vec::new();
-    if let Some(init) = node.child_by_field_name("init") {
-        condition_calls.extend(collect_body_elements(init, source));
-    }
-    if let Some(condition) = node.child_by_field_name("condition") {
-        condition_calls.extend(collect_body_elements(condition, source));
-    }
+    let init_calls = node
+        .child_by_field_name("init")
+        .map(|init| collect_body_elements(init, source))
+        .unwrap_or_default();
+    let condition_calls = node
+        .child_by_field_name("condition")
+        .map(|condition| collect_body_elements(condition, source))
+        .unwrap_or_default();
 
     LoopSyntax {
         kind: LoopKind::For,
         source: header_source(node, source),
+        execution: LoopExecution::ZeroOrMore,
+        init_calls,
         condition_calls,
-        body: loop_body(node)
-            .map(|body| collect_body_elements(body, source))
-            .unwrap_or_default(),
+        arms: loop_body_arm(node, source).into_iter().collect(),
         update_calls: node
             .child_by_field_name("update")
             .map(|update| collect_body_elements(update, source))
@@ -373,12 +377,12 @@ fn parse_enhanced_for_statement(node: Node<'_>, source: &str) -> LoopSyntax {
     LoopSyntax {
         kind: LoopKind::EnhancedFor,
         source: header_source(node, source),
+        execution: LoopExecution::ZeroOrMore,
+        init_calls: Vec::new(),
         condition_calls: iterable
             .map(|iterable| collect_body_elements(iterable, source))
             .unwrap_or_default(),
-        body: loop_body(node)
-            .map(|body| collect_body_elements(body, source))
-            .unwrap_or_default(),
+        arms: loop_body_arm(node, source).into_iter().collect(),
         update_calls: Vec::new(),
         locals: enhanced_for_local(node, source).into_iter().collect(),
     }
@@ -392,12 +396,12 @@ fn parse_while_statement(node: Node<'_>, source: &str) -> LoopSyntax {
         source: condition
             .map(|condition| condition_source(condition, source))
             .unwrap_or_else(|| header_source(node, source)),
+        execution: LoopExecution::ZeroOrMore,
+        init_calls: Vec::new(),
         condition_calls: condition
             .map(|condition| collect_body_elements(condition, source))
             .unwrap_or_default(),
-        body: loop_body(node)
-            .map(|body| collect_body_elements(body, source))
-            .unwrap_or_default(),
+        arms: loop_body_arm(node, source).into_iter().collect(),
         update_calls: Vec::new(),
         locals: Vec::new(),
     }
@@ -411,15 +415,22 @@ fn parse_do_statement(node: Node<'_>, source: &str) -> LoopSyntax {
         source: condition
             .map(|condition| condition_source(condition, source))
             .unwrap_or_else(|| header_source(node, source)),
+        execution: LoopExecution::OneOrMore,
+        init_calls: Vec::new(),
         condition_calls: condition
             .map(|condition| collect_body_elements(condition, source))
             .unwrap_or_default(),
-        body: loop_body(node)
-            .map(|body| collect_body_elements(body, source))
-            .unwrap_or_default(),
+        arms: loop_body_arm(node, source).into_iter().collect(),
         update_calls: Vec::new(),
         locals: Vec::new(),
     }
+}
+
+fn loop_body_arm(node: Node<'_>, source: &str) -> Option<LoopArmSyntax> {
+    loop_body(node).map(|body| LoopArmSyntax {
+        label: "body".to_string(),
+        body: collect_body_elements(body, source),
+    })
 }
 
 fn enhanced_for_local(node: Node<'_>, source: &str) -> Option<LoopLocal> {

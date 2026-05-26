@@ -8,8 +8,8 @@ use crate::model::{
 };
 
 use super::common::{
-    control_kind_human_label, external_kind_human_label, loop_kind_human_label,
-    max_remaining_depth, single_line, truncated_marker, truncated_note,
+    control_kind_human_label, external_kind_human_label, loop_execution_label,
+    loop_kind_human_label, max_remaining_depth, single_line, truncated_marker, truncated_note,
 };
 
 const DEFAULT_MAX_DEPTH: usize = 5;
@@ -212,7 +212,7 @@ fn render_loop(
     render_children(
         out,
         caller_fqn,
-        &loop_node.condition,
+        &loop_node.init,
         section_call_depth,
         max_depth,
         truncated,
@@ -220,11 +220,21 @@ fn render_loop(
     render_children(
         out,
         caller_fqn,
-        &loop_node.body,
+        &loop_node.condition,
         section_call_depth,
         max_depth,
         truncated,
     );
+    for arm in &loop_node.arms {
+        render_children(
+            out,
+            caller_fqn,
+            &arm.children,
+            section_call_depth,
+            max_depth,
+            truncated,
+        );
+    }
     render_children(
         out,
         caller_fqn,
@@ -299,9 +309,10 @@ fn collect_participants(
         }
         FlowNode::Loop(loop_node) => {
             for child in loop_node
-                .condition
+                .init
                 .iter()
-                .chain(&loop_node.body)
+                .chain(&loop_node.condition)
+                .chain(loop_node.arms.iter().flat_map(|arm| &arm.children))
                 .chain(&loop_node.update)
             {
                 collect_participants(child, depth, max_depth, participants, seen);
@@ -346,8 +357,9 @@ fn mermaid_condition(condition: &str) -> String {
 
 fn loop_label(loop_node: &LoopNode) -> String {
     format!(
-        "{} {}",
+        "{} {} ({})",
         loop_kind_human_label(loop_node.kind),
-        single_line(&loop_node.source)
+        single_line(&loop_node.source),
+        loop_execution_label(loop_node.execution)
     )
 }

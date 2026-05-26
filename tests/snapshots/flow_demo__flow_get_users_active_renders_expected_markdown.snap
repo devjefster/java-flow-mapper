@@ -13,7 +13,7 @@ expression: stdout
   - `UserService#findActive()` *[resolved]*
     - `UserRepository#findAll()` *[external - Spring Data JPA]*
     - `ArrayList#<init>()` *[external - JDK library]*
-    - loop for-each `User user : users`:
+    - loop for-each `User user : users`: *(may execute 0..n times)*
       - body:
         - `User#getActive()` *[resolved]*
         - `Boolean#equals(_)` *[external - JDK library]*
@@ -27,7 +27,7 @@ expression: stdout
             - `UserResponse#<init>(Long, String, String, Integer, Boolean)` *[resolved]*
           - `List#add(_)` *[external - JDK library]*
     - `List#forEach(Consumer)` *[control - traversal]*
-      - loop forEach `List.forEach`:
+      - loop forEach `List.forEach`: *(may execute 0..n times)*
         - body:
           - method ref `this::requireResponseEmail`:
             - `UserService#requireResponseEmail(UserResponse)` *[resolved]*

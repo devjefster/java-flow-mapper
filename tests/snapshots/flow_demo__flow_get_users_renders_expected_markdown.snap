@@ -14,7 +14,7 @@ expression: stdout
     - `UserRepository#findAll()` *[external - Spring Data JPA]*
     - `List#stream()` *[external - JDK library]*
     - `Stream#map(Function)` *[control - traversal]*
-      - loop stream `Stream.map`:
+      - loop stream `Stream.map`: *(may execute 0..n times)*
         - body:
           - method ref `this::toResponse`:
             - `UserService#toResponse(User)` *[resolved]*

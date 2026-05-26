@@ -325,3 +325,32 @@ Known deferrals:
 - Exception type flow is not inferred; catch arms are structural and do not model which exceptions reach each handler.
 - Try-with-resources is only shallowly surfaced through header calls, not resource lifetime semantics.
 - Finally dominance is not modeled; JFM does not infer that finally always runs or overrides prior returns/throws.
+
+## 2026-05-26 - Loop contract alignment
+
+Aligned loop flow nodes with the larger v0.2 control-flow contract:
+
+- Added loop execution cardinality with `LoopExecution::ZeroOrMore` and `LoopExecution::OneOrMore`.
+- Marked `for`, enhanced-for, `while`, stream traversal, and `forEach` loops as `0..n`; marked `do/while` loops precisely as `1..n`.
+- Added parsed and resolved loop arms (`LoopArmSyntax` / `LoopArm`) so loop bodies now render as a labeled `body` arm rather than a bare `body` list.
+- Split classic `for` header calls into `init_calls`, `condition_calls`, and `update_calls`; `start()` now belongs to init while `limit()` remains condition in parser tests.
+- Updated flow expansion to resolve loop `init`, `condition`, `arms`, and `update` separately while preserving enhanced-for loop-local typing inside body arms.
+- Updated synthetic stream and `forEach` traversal loops to use `execution: 0..n` and a `body` arm around their lambda/method-reference payload.
+- Updated Markdown loop rendering to show execution cardinality, e.g. `*(may execute 0..n times)*`, and to render `init`, `condition`, `body`, and `update` sections when present.
+- Updated JSON loop output with `execution`, `init`, and `arms` fields, replacing the previous bare `body` field.
+- Updated Mermaid loop headers to include cardinality, e.g. `loop for-each User user : users (0..n)`.
+- Refreshed loop-bearing demo snapshots for `GET /users` and `GET /users/active` across Markdown, JSON, and Mermaid.
+
+Verified:
+
+- `cargo test parser::tests::parses_classic_for_loop_header_body_and_update_calls -- --nocapture`
+- `INSTA_UPDATE=always cargo test`
+- `cargo fmt --check`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+- `cargo test`
+
+Known deferrals:
+
+- Mermaid still flattens loop sections inside a single loop block; Markdown and JSON preserve section labels.
+- Loop iteration counts remain structural cardinality only; JFM does not infer data-dependent bounds.
+- Classic `for` local-variable typing for initializer-declared variables remains shallow beyond surfaced calls.

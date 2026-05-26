@@ -4,7 +4,7 @@ use std::collections::HashSet;
 
 use crate::model::{
     Arm, BodyElement, BranchNode, CallNode, CallSite, ClassInfo, Confidence, FlowNode, Fqn,
-    LambdaKind, LambdaNode, LambdaSyntax, LoopLocal, LoopNode, LoopSyntax, MethodInfo,
+    LambdaKind, LambdaNode, LambdaSyntax, LoopArm, LoopLocal, LoopNode, LoopSyntax, MethodInfo,
     ProjectIndex, ReceiverKind, UnresolvedRef,
 };
 
@@ -144,6 +144,16 @@ fn expand_loop(
     LoopNode {
         kind: loop_syntax.kind,
         source: loop_syntax.source.clone(),
+        execution: loop_syntax.execution,
+        init: expand_body(
+            index,
+            owner,
+            &scoped_caller,
+            &loop_syntax.init_calls,
+            unresolved,
+            stack,
+            caller_depth,
+        ),
         condition: expand_body(
             index,
             owner,
@@ -153,15 +163,22 @@ fn expand_loop(
             stack,
             caller_depth,
         ),
-        body: expand_body(
-            index,
-            owner,
-            &scoped_caller,
-            &loop_syntax.body,
-            unresolved,
-            stack,
-            caller_depth,
-        ),
+        arms: loop_syntax
+            .arms
+            .iter()
+            .map(|arm| LoopArm {
+                label: arm.label.clone(),
+                children: expand_body(
+                    index,
+                    owner,
+                    &scoped_caller,
+                    &arm.body,
+                    unresolved,
+                    stack,
+                    caller_depth,
+                ),
+            })
+            .collect(),
         update: expand_body(
             index,
             owner,

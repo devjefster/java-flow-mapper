@@ -6,8 +6,8 @@
 use std::collections::HashSet;
 
 use crate::model::{
-    Arm, BranchKind, BranchNode, CallSite, ClassInfo, ExternalKind, FlowNode, Fqn, LoopKind,
-    LoopNode, MethodInfo, ProjectIndex, TypeRef, UnresolvedRef,
+    Arm, BranchKind, BranchNode, CallSite, ClassInfo, ExternalKind, FlowNode, Fqn, LoopArm,
+    LoopExecution, LoopKind, LoopNode, MethodInfo, ProjectIndex, TypeRef, UnresolvedRef,
 };
 
 use super::expand::expand_lambdas;
@@ -68,8 +68,13 @@ fn external_loop(
     Some(LoopNode {
         kind,
         source: format!("{receiver_label}.{}", call.method_name),
+        execution: LoopExecution::ZeroOrMore,
+        init: Vec::new(),
         condition: Vec::new(),
-        body: lambda_child(ctx, call, 0),
+        arms: vec![LoopArm {
+            label: "body".to_string(),
+            children: lambda_child(ctx, call, 0),
+        }],
         update: Vec::new(),
     })
 }
@@ -412,8 +417,11 @@ mod tests {
 
         assert_eq!(loop_node.kind, LoopKind::Stream);
         assert_eq!(loop_node.source, "Stream.map");
+        assert_eq!(loop_node.execution, LoopExecution::ZeroOrMore);
+        assert!(loop_node.init.is_empty());
         assert!(loop_node.condition.is_empty());
-        assert!(matches!(loop_node.body[0], FlowNode::Lambda(_)));
+        assert_eq!(loop_node.arms[0].label, "body");
+        assert!(matches!(loop_node.arms[0].children[0], FlowNode::Lambda(_)));
         assert!(loop_node.update.is_empty());
     }
 
@@ -438,7 +446,9 @@ mod tests {
 
         assert_eq!(loop_node.kind, LoopKind::ForEach);
         assert_eq!(loop_node.source, "List.forEach");
-        assert!(matches!(loop_node.body[0], FlowNode::Lambda(_)));
+        assert_eq!(loop_node.execution, LoopExecution::ZeroOrMore);
+        assert_eq!(loop_node.arms[0].label, "body");
+        assert!(matches!(loop_node.arms[0].children[0], FlowNode::Lambda(_)));
     }
 
     #[test]

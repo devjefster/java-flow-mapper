@@ -17,7 +17,7 @@ sequenceDiagram
     UserService->>List: stream()
     UserService->>Stream: map(Function)
     Note over Stream: control flow (traversal)
-    loop stream Stream.map
+    loop stream Stream.map (0..n)
     Stream->>UserService: toResponse(User)
     UserService->>User: getId()
     UserService->>User: getName()

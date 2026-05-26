@@ -43,54 +43,61 @@ expression: stdout
               "type": "loop",
               "kind": "stream",
               "source": "Stream.map",
+              "execution": "0..n",
+              "init": [],
               "condition": [],
-              "body": [
+              "arms": [
                 {
-                  "type": "lambda",
-                  "kind": "method_ref",
-                  "source": "this::toResponse",
+                  "label": "body",
                   "children": [
                     {
-                      "type": "call",
-                      "method": "com.example.demo.service.UserService#toResponse(User)",
-                      "confidence": "resolved",
-                      "scope": "intra-class",
-                      "calls": [
+                      "type": "lambda",
+                      "kind": "method_ref",
+                      "source": "this::toResponse",
+                      "children": [
                         {
                           "type": "call",
-                          "method": "com.example.demo.entity.User#getId()",
+                          "method": "com.example.demo.service.UserService#toResponse(User)",
                           "confidence": "resolved",
-                          "calls": []
-                        },
-                        {
-                          "type": "call",
-                          "method": "com.example.demo.entity.User#getName()",
-                          "confidence": "resolved",
-                          "calls": []
-                        },
-                        {
-                          "type": "call",
-                          "method": "com.example.demo.entity.User#getEmail()",
-                          "confidence": "resolved",
-                          "calls": []
-                        },
-                        {
-                          "type": "call",
-                          "method": "com.example.demo.entity.User#getAge()",
-                          "confidence": "resolved",
-                          "calls": []
-                        },
-                        {
-                          "type": "call",
-                          "method": "com.example.demo.entity.User#getActive()",
-                          "confidence": "resolved",
-                          "calls": []
-                        },
-                        {
-                          "type": "call",
-                          "method": "com.example.demo.dto.UserResponse#<init>(Long, String, String, Integer, Boolean)",
-                          "confidence": "resolved",
-                          "calls": []
+                          "scope": "intra-class",
+                          "calls": [
+                            {
+                              "type": "call",
+                              "method": "com.example.demo.entity.User#getId()",
+                              "confidence": "resolved",
+                              "calls": []
+                            },
+                            {
+                              "type": "call",
+                              "method": "com.example.demo.entity.User#getName()",
+                              "confidence": "resolved",
+                              "calls": []
+                            },
+                            {
+                              "type": "call",
+                              "method": "com.example.demo.entity.User#getEmail()",
+                              "confidence": "resolved",
+                              "calls": []
+                            },
+                            {
+                              "type": "call",
+                              "method": "com.example.demo.entity.User#getAge()",
+                              "confidence": "resolved",
+                              "calls": []
+                            },
+                            {
+                              "type": "call",
+                              "method": "com.example.demo.entity.User#getActive()",
+                              "confidence": "resolved",
+                              "calls": []
+                            },
+                            {
+                              "type": "call",
+                              "method": "com.example.demo.dto.UserResponse#<init>(Long, String, String, Integer, Boolean)",
+                              "confidence": "resolved",
+                              "calls": []
+                            }
+                          ]
                         }
                       ]
                     }

@@ -37,80 +37,87 @@ expression: stdout
           "type": "loop",
           "kind": "enhanced_for",
           "source": "User user : users",
+          "execution": "0..n",
+          "init": [],
           "condition": [],
-          "body": [
+          "arms": [
             {
-              "type": "call",
-              "method": "com.example.demo.entity.User#getActive()",
-              "confidence": "resolved",
-              "calls": []
-            },
-            {
-              "type": "call",
-              "method": "Boolean#equals(_)",
-              "confidence": "external",
-              "external_kind": "jdk-library",
-              "calls": []
-            },
-            {
-              "type": "branch",
-              "kind": "if",
-              "condition_src": "Boolean.TRUE.equals(user.getActive())",
-              "arms": [
+              "label": "body",
+              "children": [
                 {
-                  "label": "then",
-                  "terminates": false,
-                  "children": [
+                  "type": "call",
+                  "method": "com.example.demo.entity.User#getActive()",
+                  "confidence": "resolved",
+                  "calls": []
+                },
+                {
+                  "type": "call",
+                  "method": "Boolean#equals(_)",
+                  "confidence": "external",
+                  "external_kind": "jdk-library",
+                  "calls": []
+                },
+                {
+                  "type": "branch",
+                  "kind": "if",
+                  "condition_src": "Boolean.TRUE.equals(user.getActive())",
+                  "arms": [
                     {
-                      "type": "call",
-                      "method": "com.example.demo.service.UserService#toResponse(User)",
-                      "confidence": "resolved",
-                      "scope": "intra-class",
-                      "calls": [
+                      "label": "then",
+                      "terminates": false,
+                      "children": [
                         {
                           "type": "call",
-                          "method": "com.example.demo.entity.User#getId()",
+                          "method": "com.example.demo.service.UserService#toResponse(User)",
                           "confidence": "resolved",
-                          "calls": []
+                          "scope": "intra-class",
+                          "calls": [
+                            {
+                              "type": "call",
+                              "method": "com.example.demo.entity.User#getId()",
+                              "confidence": "resolved",
+                              "calls": []
+                            },
+                            {
+                              "type": "call",
+                              "method": "com.example.demo.entity.User#getName()",
+                              "confidence": "resolved",
+                              "calls": []
+                            },
+                            {
+                              "type": "call",
+                              "method": "com.example.demo.entity.User#getEmail()",
+                              "confidence": "resolved",
+                              "calls": []
+                            },
+                            {
+                              "type": "call",
+                              "method": "com.example.demo.entity.User#getAge()",
+                              "confidence": "resolved",
+                              "calls": []
+                            },
+                            {
+                              "type": "call",
+                              "method": "com.example.demo.entity.User#getActive()",
+                              "confidence": "resolved",
+                              "calls": []
+                            },
+                            {
+                              "type": "call",
+                              "method": "com.example.demo.dto.UserResponse#<init>(Long, String, String, Integer, Boolean)",
+                              "confidence": "resolved",
+                              "calls": []
+                            }
+                          ]
                         },
                         {
                           "type": "call",
-                          "method": "com.example.demo.entity.User#getName()",
-                          "confidence": "resolved",
-                          "calls": []
-                        },
-                        {
-                          "type": "call",
-                          "method": "com.example.demo.entity.User#getEmail()",
-                          "confidence": "resolved",
-                          "calls": []
-                        },
-                        {
-                          "type": "call",
-                          "method": "com.example.demo.entity.User#getAge()",
-                          "confidence": "resolved",
-                          "calls": []
-                        },
-                        {
-                          "type": "call",
-                          "method": "com.example.demo.entity.User#getActive()",
-                          "confidence": "resolved",
-                          "calls": []
-                        },
-                        {
-                          "type": "call",
-                          "method": "com.example.demo.dto.UserResponse#<init>(Long, String, String, Integer, Boolean)",
-                          "confidence": "resolved",
+                          "method": "List#add(_)",
+                          "confidence": "external",
+                          "external_kind": "jdk-library",
                           "calls": []
                         }
                       ]
-                    },
-                    {
-                      "type": "call",
-                      "method": "List#add(_)",
-                      "confidence": "external",
-                      "external_kind": "jdk-library",
-                      "calls": []
                     }
                   ]
                 }
@@ -129,40 +136,47 @@ expression: stdout
               "type": "loop",
               "kind": "for_each",
               "source": "List.forEach",
+              "execution": "0..n",
+              "init": [],
               "condition": [],
-              "body": [
+              "arms": [
                 {
-                  "type": "lambda",
-                  "kind": "method_ref",
-                  "source": "this::requireResponseEmail",
+                  "label": "body",
                   "children": [
                     {
-                      "type": "call",
-                      "method": "com.example.demo.service.UserService#requireResponseEmail(UserResponse)",
-                      "confidence": "resolved",
-                      "scope": "intra-class",
-                      "calls": [
+                      "type": "lambda",
+                      "kind": "method_ref",
+                      "source": "this::requireResponseEmail",
+                      "children": [
                         {
                           "type": "call",
-                          "method": "com.example.demo.dto.UserResponse#getEmail()",
+                          "method": "com.example.demo.service.UserService#requireResponseEmail(UserResponse)",
                           "confidence": "resolved",
-                          "calls": []
-                        },
-                        {
-                          "type": "branch",
-                          "kind": "if",
-                          "condition_src": "response.getEmail() == null",
-                          "arms": [
+                          "scope": "intra-class",
+                          "calls": [
                             {
-                              "label": "then",
-                              "terminates": true,
-                              "children": [
+                              "type": "call",
+                              "method": "com.example.demo.dto.UserResponse#getEmail()",
+                              "confidence": "resolved",
+                              "calls": []
+                            },
+                            {
+                              "type": "branch",
+                              "kind": "if",
+                              "condition_src": "response.getEmail() == null",
+                              "arms": [
                                 {
-                                  "type": "call",
-                                  "method": "IllegalStateException#<init>(_)",
-                                  "confidence": "external",
-                                  "external_kind": "jdk-library",
-                                  "calls": []
+                                  "label": "then",
+                                  "terminates": true,
+                                  "children": [
+                                    {
+                                      "type": "call",
+                                      "method": "IllegalStateException#<init>(_)",
+                                      "confidence": "external",
+                                      "external_kind": "jdk-library",
+                                      "calls": []
+                                    }
+                                  ]
                                 }
                               ]
                             }

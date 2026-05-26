@@ -1,6 +1,6 @@
 //! Shared renderer helpers for depth accounting and labels.
 
-use crate::model::{CallNode, ControlKind, ExternalKind, FlowNode, LoopKind};
+use crate::model::{CallNode, ControlKind, ExternalKind, FlowNode, LoopExecution, LoopKind};
 
 /// Render-time `max_depth` trims output only; it is independent from
 /// `flow::MAX_DEPTH`, which protects graph construction from runaway recursion.
@@ -31,9 +31,10 @@ fn flow_node_remaining_depth(node: &FlowNode) -> usize {
             .max()
             .unwrap_or(0),
         FlowNode::Loop(loop_node) => loop_node
-            .condition
+            .init
             .iter()
-            .chain(&loop_node.body)
+            .chain(&loop_node.condition)
+            .chain(loop_node.arms.iter().flat_map(|arm| &arm.children))
             .chain(&loop_node.update)
             .map(flow_node_remaining_depth)
             .max()
@@ -90,5 +91,12 @@ pub(super) fn loop_kind_human_label(kind: LoopKind) -> &'static str {
         LoopKind::DoWhile => "do-while",
         LoopKind::ForEach => "forEach",
         LoopKind::Stream => "stream",
+    }
+}
+
+pub(super) fn loop_execution_label(execution: LoopExecution) -> &'static str {
+    match execution {
+        LoopExecution::ZeroOrMore => "0..n",
+        LoopExecution::OneOrMore => "1..n",
     }
 }

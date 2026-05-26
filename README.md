@@ -9,7 +9,7 @@ The project is currently a single binary crate focused on the `flow` command.
 - Parses Java source with `tree-sitter-java`.
 - Discovers Spring MVC endpoints from controller mapping annotations.
 - Resolves calls through controllers, services, fields, locals, constructors, interfaces, and Spring Data repositories.
-- Preserves visible control flow for branches, loops, lambdas, method references, streams, and common `Optional` operations.
+- Preserves visible control flow for `if`, `switch`, ternary, try/catch/finally, loops, lambdas, method references, stream traversal, and common `Optional` operations.
 - Marks unresolved and external calls instead of hiding them.
 - Renders request flows as human-readable Markdown, structured JSON, or Mermaid sequence diagrams.
 
@@ -73,6 +73,18 @@ cargo run -- flow demo-api/demo "GET /users/{id}" --max-depth 2
 
 Markdown and Mermaid default to a render depth of 5 when omitted. JSON is unlimited unless `--max-depth` is provided.
 
+### Control Flow
+
+`jfm flow` renders control structures as first-class nodes instead of flattening all reachable calls as unconditional siblings:
+
+- Branches: `if`, `switch`, ternary expressions, and common `Optional` present/empty behavior.
+- Try/catch/finally: one arm for the `try` body, one arm per `catch`, and an optional `finally` arm.
+- Loops: `for`, enhanced-for, `while`, `do/while`, stream traversal, and `forEach` traversal.
+- Loop execution: most loops are marked `0..n`; `do/while` is marked `1..n`.
+- Loop sections: classic `for` loops split `init`, `condition`, `body`, and `update`; other loops expose the sections that apply.
+
+The mapper records source structure and source text. It does not evaluate conditions, predict which branch runs, infer loop bounds, or model exception propagation.
+
 ### Debug Logging
 
 Enable parser and indexing diagnostics with `RUST_LOG`:
@@ -114,14 +126,18 @@ Implemented:
 - `--max-depth N`
 - Spring MVC endpoint discovery
 - Spring Data repository method recognition for common repository base interfaces
-- Branch, loop, lambda, method-reference, stream traversal, and `Optional` flow rendering
+- Branch rendering for `if`, `switch`, ternary, and `Optional` control flow
+- Try/catch/finally rendering with labeled arms
+- Loop rendering with execution cardinality, labeled body arms, and split `for` init/condition/update sections
+- Lambda, method-reference, stream traversal, and `forEach` traversal rendering
 
 Not implemented yet:
 
 - Persistent graph storage or Kuzu integration
 - `index`, `entrypoints`, `query`, or `doctor` subcommands
 - Full Java type inference
-- Complete handling for switch, ternary, try/catch, AOP, Bean Validation, Lombok, `@Primary`, or `@Qualifier`
+- Symbolic condition evaluation, exception propagation, or data-dependent loop bounds
+- Complete handling for AOP, Bean Validation, Lombok, `@Primary`, or `@Qualifier`
 
 ## Repository Layout
 

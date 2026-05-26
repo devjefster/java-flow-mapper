@@ -17,7 +17,7 @@ sequenceDiagram
     UserService->>UserRepository: findAll()
     Note over UserRepository: external (Spring Data JPA)
     UserService->>ArrayList: <init>(...)
-    loop for-each User user : users
+    loop for-each User user : users (0..n)
     UserService->>User: getActive()
     UserService->>Boolean: equals(_)
     alt Boolean.TRUE.equals(user.getActive())
@@ -33,7 +33,7 @@ sequenceDiagram
     end
     UserService->>List: forEach(Consumer)
     Note over List: control flow (traversal)
-    loop forEach List.forEach
+    loop forEach List.forEach (0..n)
     List->>UserService: requireResponseEmail(UserResponse)
     UserService->>UserResponse: getEmail()
     alt response.getEmail() == null
