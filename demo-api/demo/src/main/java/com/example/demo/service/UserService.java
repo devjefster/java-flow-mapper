@@ -105,8 +105,27 @@ public class UserService {
             user.setAge(request.getAge());
         }
 
-        if (request.getActive() != null) {
-            user.setActive(request.getActive());
+        switch (activeChange(user, request.getActive())) {
+            case ACTIVATE:
+                user.setActive(true);
+                break;
+            case DEACTIVATE:
+                user.setActive(false);
+                break;
+            case UNCHANGED:
+                break;
+        }
+
+        String activeChangeLabel = request.getActive() == null
+                ? unchangedStatus(user)
+                : requestedStatus(request);
+
+        try {
+            recordUpdateStatus(activeChangeLabel);
+        } catch (IllegalArgumentException ex) {
+            recoverUpdateStatus(ex);
+        } finally {
+            auditUpdateAttempt(user);
         }
 
         User updatedUser = repository.save(user);
@@ -146,6 +165,37 @@ public class UserService {
         }
     }
 
+    private ActiveChange activeChange(User user, Boolean requestedActive) {
+        if (requestedActive == null || requestedActive.equals(user.getActive())) {
+            return ActiveChange.UNCHANGED;
+        }
+
+        if (Boolean.TRUE.equals(requestedActive)) {
+            return ActiveChange.ACTIVATE;
+        }
+
+        return ActiveChange.DEACTIVATE;
+    }
+
+    private String unchangedStatus(User user) {
+        return "unchanged:" + user.getActive();
+    }
+
+    private String requestedStatus(UpdateUserRequest request) {
+        return "requested:" + request.getActive();
+    }
+
+    private void recordUpdateStatus(String status) {
+        status.trim();
+    }
+
+    private void recoverUpdateStatus(IllegalArgumentException ex) {
+    }
+
+    private void auditUpdateAttempt(User user) {
+        user.getId();
+    }
+
     private UserResponse toResponse(User user) {
         return new UserResponse(
                 user.getId(),
@@ -154,5 +204,11 @@ public class UserService {
                 user.getAge(),
                 user.getActive()
         );
+    }
+
+    private enum ActiveChange {
+        ACTIVATE,
+        DEACTIVATE,
+        UNCHANGED
     }
 }
