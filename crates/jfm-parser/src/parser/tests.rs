@@ -499,6 +499,105 @@ fn indexes_enum_declarations_with_methods() {
     );
 }
 
+#[test]
+fn parses_valid_parameter_annotations() {
+    let methods = parse_methods(
+        r#"
+            import jakarta.validation.Valid;
+            import org.springframework.web.bind.annotation.RequestBody;
+
+            class DemoController {
+                void create(@Valid @RequestBody CreateUserRequest request) {
+                }
+            }
+            "#,
+    );
+    let method = method(&methods, "create");
+    let param = &method.params[0];
+
+    assert_eq!(param.name, "request");
+    assert_eq!(param.ty, "CreateUserRequest");
+    assert_eq!(param.annotations, vec!["@Valid", "@RequestBody"]);
+}
+
+#[test]
+fn parses_builtin_field_validation_constraints() {
+    let parsed = parse_source(
+        r#"
+            package com.example.demo.dto;
+
+            import jakarta.validation.constraints.*;
+
+            public class CreateUserRequest {
+                @NotBlank(message = ValidationMessages.NAME_REQUIRED)
+                @Size(min = 3, max = 120)
+                private String name;
+
+                @NotNull
+                @Min(value = 18)
+                @Max(value = 120)
+                private Integer age;
+            }
+            "#,
+    );
+    let class = parsed
+        .classes
+        .iter()
+        .find(|class| class.simple_name == "CreateUserRequest")
+        .unwrap();
+    let name = class
+        .fields
+        .iter()
+        .find(|field| field.name == "name")
+        .unwrap();
+    let age = class
+        .fields
+        .iter()
+        .find(|field| field.name == "age")
+        .unwrap();
+
+    assert_eq!(
+        name.validation
+            .iter()
+            .map(|constraint| constraint.annotation.as_str())
+            .collect::<Vec<_>>(),
+        vec!["NotBlank", "Size"]
+    );
+    assert_eq!(
+        age.validation
+            .iter()
+            .map(|constraint| constraint.annotation.as_str())
+            .collect::<Vec<_>>(),
+        vec!["NotNull", "Min", "Max"]
+    );
+}
+
+#[test]
+fn indexes_custom_constraint_annotation_declarations() {
+    let parsed = parse_source(
+        r#"
+            package com.example.demo.validation;
+
+            import jakarta.validation.Constraint;
+
+            @Constraint(validatedBy = CompanyEmailValidator.class)
+            public @interface CompanyEmail {
+            }
+            "#,
+    );
+    let annotation = parsed
+        .classes
+        .iter()
+        .find(|class| class.simple_name == "CompanyEmail")
+        .unwrap();
+
+    assert_eq!(annotation.kind, ClassKind::Annotation);
+    assert_eq!(
+        annotation.annotations,
+        vec!["@Constraint(validatedBy = CompanyEmailValidator.class)"]
+    );
+}
+
 fn parse_methods(source: &str) -> Vec<MethodInfo> {
     parse_source(source)
         .classes

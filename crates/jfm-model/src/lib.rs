@@ -139,6 +139,10 @@ pub struct ParamInfo {
     pub name: String,
     pub ty: String,
     pub source: ParamSource,
+    #[serde(default)]
+    pub annotations: Vec<String>,
+    #[serde(default)]
+    pub validation: Vec<ValidationField>,
 }
 
 /// Request binding source for a method parameter.
@@ -151,6 +155,23 @@ pub enum ParamSource {
     Unspecified,
 }
 
+/// Bean Validation constraints attached to a field of an endpoint input DTO.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ValidationField {
+    pub field: String,
+    pub ty: String,
+    pub constraints: Vec<ValidationConstraint>,
+}
+
+/// Bean Validation constraint annotation, preserving source spelling for output.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ValidationConstraint {
+    pub annotation: String,
+    pub raw: String,
+    #[serde(default)]
+    pub custom_validator: Option<String>,
+}
+
 /// Parsed Java class or interface.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ClassInfo {
@@ -160,6 +181,8 @@ pub struct ClassInfo {
     pub imports: HashMap<String, String>,
     pub kind: ClassKind,
     pub annotations: Vec<String>,
+    #[serde(default)]
+    pub validation: Vec<ValidationConstraint>,
     pub extends: Vec<TypeRef>,
     pub implements: Vec<TypeRef>,
     pub fields: Vec<FieldInfo>,
@@ -174,6 +197,7 @@ pub enum ClassKind {
     Class,
     Interface,
     Enum,
+    Annotation,
 }
 
 /// Java type reference, preserving the raw spelling and top-level generics.
@@ -189,6 +213,8 @@ pub struct FieldInfo {
     pub name: String,
     pub ty: TypeRef,
     pub annotations: Vec<String>,
+    #[serde(default)]
+    pub validation: Vec<ValidationConstraint>,
 }
 
 /// Parsed method or constructor with body elements and local variable types.

@@ -1,5 +1,5 @@
 ---
-source: tests/flow_demo.rs
+source: crates/jfm-cli/tests/flow_demo.rs
 expression: stdout
 ---
 # PUT /users/{id}
@@ -102,6 +102,10 @@ expression: stdout
 
 - `id: Long` *(path variable)*
 - `request: UpdateUserRequest` *(request body)*
+  - validations:
+    - `name`: `@Size(min = 3, max = 120)`
+    - `email`: `@Email(message = ValidationMessages.INVALID_EMAIL)`, `@CompanyEmail` *(custom validator: `CompanyEmailValidator`)*
+    - `age`: `@Min(value = 18, message = ValidationMessages.AGE_MINIMUM)`, `@Max(value = 120)`
 
 ## Unresolved / external
 
@@ -114,5 +118,5 @@ expression: stdout
 - Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
 - Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.
 - Optional present/empty behavior is rendered structurally, but JFM does not predict which arm runs for a request.
-- AOP, @Transactional, @ControllerAdvice, DI qualifiers, Lombok, and Bean Validation are not modeled.
+- AOP, @Transactional, @ControllerAdvice, DI qualifiers, and Lombok are not modeled.
 - Repeated subtrees elided after first appearance (see above).

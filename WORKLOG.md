@@ -449,3 +449,31 @@ Known deferrals:
 - `entrypoints` and `doctor` do not silently reparse when the cache is missing; users must run `jfm index` first.
 - The cache does not yet record index metadata such as timestamp, schema version, or Java file count.
 - `jfm flow` still reparses source each run instead of reading the cached `ProjectIndex`.
+
+## 2026-05-27 - Bean Validation input constraints
+
+Implemented the v0.3 Bean Validation slice for endpoint input summaries:
+
+- Added serde-defaulted validation metadata to `ParamInfo`, `FieldInfo`, and `ClassInfo` so cached indexes remain tolerant of older serialized data.
+- Preserved raw parameter annotations during parsing, including controller inputs such as `@Valid @RequestBody CreateUserRequest request`.
+- Extracted supported built-in field constraints from DTOs: `@NotBlank`, `@NotNull`, `@Email`, `@Min`, `@Max`, `@Size`, and `@Pattern`.
+- Indexed Java annotation declarations (`public @interface ...`) so custom constraint annotations can be discovered as project symbols.
+- Added flow-time enrichment for parameters annotated with `@Valid`: the resolver walks the DTO fields and attaches validation metadata to `Flow.inputs`.
+- Resolved custom constraint validators from annotations declared with `@Constraint(validatedBy = SomeValidator.class)`.
+- Rendered validation metadata under the Markdown `## Inputs` section only; JSON and Mermaid remain unchanged except for the global notes text.
+- Removed Bean Validation from the generic “not modeled” note and left AOP, `@Transactional`, `@ControllerAdvice`, DI qualifiers, and Lombok in that note.
+- Added demo fixture coverage with `@CompanyEmail` and `CompanyEmailValidator`, applied to both create and update request DTOs.
+- Refreshed demo snapshots so `POST /users` and `PUT /users/{id}` Markdown show built-in and custom validation constraints.
+- Updated vault roadmap/deferred-feature docs to include `@NotNull` and `@Max` in the v0.3 scope.
+
+Verified:
+
+- `cargo fmt --check`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+- `cargo test`
+
+Known deferrals:
+
+- Programmatic validation through `Validator.validate(obj)` is not modeled.
+- Validation groups, message interpolation, payloads, and type-use constraints are not interpreted.
+- Validation metadata is not exposed in JSON or Mermaid yet.

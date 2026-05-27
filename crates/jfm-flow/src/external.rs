@@ -527,6 +527,7 @@ mod tests {
             imports: HashMap::new(),
             kind: ClassKind::Class,
             annotations: Vec::new(),
+            validation: Vec::new(),
             extends: Vec::new(),
             implements: Vec::new(),
             fields: Vec::<FieldInfo>::new(),

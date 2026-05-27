@@ -5,7 +5,7 @@ use std::fmt::Write;
 
 use crate::model::{
     BranchKind, BranchNode, CallNode, Confidence, Flow, FlowNode, Fqn, LambdaKind, LambdaNode,
-    LoopNode, ParamSource,
+    LoopNode, ParamInfo, ParamSource, ValidationConstraint, ValidationField,
 };
 
 use super::common::{
@@ -53,14 +53,7 @@ pub fn render(flow: &Flow, max_depth: Option<usize>) -> String {
         writeln!(out, "- None").unwrap();
     } else {
         for input in &flow.inputs {
-            writeln!(
-                out,
-                "- `{}: {}` *({})*",
-                input.name,
-                input.ty,
-                param_source_label(&input.source)
-            )
-            .unwrap();
+            render_input(&mut out, input);
         }
     }
     writeln!(out).unwrap();
@@ -94,6 +87,40 @@ pub fn render(flow: &Flow, max_depth: Option<usize>) -> String {
     }
 
     out
+}
+
+fn render_input(out: &mut String, input: &ParamInfo) {
+    writeln!(
+        out,
+        "- `{}: {}` *({})*",
+        input.name,
+        input.ty,
+        param_source_label(&input.source)
+    )
+    .unwrap();
+    if !input.validation.is_empty() {
+        writeln!(out, "  - validations:").unwrap();
+        for field in &input.validation {
+            render_validation_field(out, field);
+        }
+    }
+}
+
+fn render_validation_field(out: &mut String, field: &ValidationField) {
+    let constraints = field
+        .constraints
+        .iter()
+        .map(validation_constraint_label)
+        .collect::<Vec<_>>()
+        .join(", ");
+    writeln!(out, "    - `{}`: {}", field.field, constraints).unwrap();
+}
+
+fn validation_constraint_label(constraint: &ValidationConstraint) -> String {
+    match &constraint.custom_validator {
+        Some(validator) => format!("`{}` *(custom validator: `{}`)*", constraint.raw, validator),
+        None => format!("`{}`", constraint.raw),
+    }
 }
 
 fn render_call_node(
@@ -560,6 +587,8 @@ mod tests {
                 name: "id".to_string(),
                 ty: "Long".to_string(),
                 source: ParamSource::Path,
+                annotations: Vec::new(),
+                validation: Vec::new(),
             }],
             root: node(
                 "example.Controller#handle()",

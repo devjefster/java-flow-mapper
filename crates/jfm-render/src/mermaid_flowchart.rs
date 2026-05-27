@@ -620,6 +620,8 @@ mod tests {
                 name: "id".to_string(),
                 ty: "Long".to_string(),
                 source: ParamSource::Path,
+                annotations: Vec::new(),
+                validation: Vec::new(),
             }],
             root: node("example.Controller#handle()", children),
             unresolved: Vec::new(),

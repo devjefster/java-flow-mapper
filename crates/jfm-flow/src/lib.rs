@@ -14,11 +14,13 @@ use crate::model::{Confidence, Flow, Fqn, HttpVerb, ProjectIndex};
 
 use self::expand::expand_method;
 use self::resolve::find_method;
+use self::validation::enrich_inputs;
 
 mod expand;
 mod external;
 mod node;
 mod resolve;
+mod validation;
 
 /// Resolver-time recursion cap. This protects graph construction and is
 /// independent of render-time `--max-depth`, which only trims output.
@@ -72,14 +74,14 @@ pub fn build_flow(index: &ProjectIndex, verb: HttpVerb, path: &str) -> Result<Fl
 
     Ok(Flow {
         endpoint,
-        inputs: method.params.clone(),
+        inputs: enrich_inputs(index, owner, &method.params),
         root,
         unresolved,
         notes: vec![
             "Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.".to_string(),
             "Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.".to_string(),
             "Optional present/empty behavior is rendered structurally, but JFM does not predict which arm runs for a request.".to_string(),
-            "AOP, @Transactional, @ControllerAdvice, DI qualifiers, Lombok, and Bean Validation are not modeled.".to_string(),
+            "AOP, @Transactional, @ControllerAdvice, DI qualifiers, and Lombok are not modeled.".to_string(),
         ],
     })
 }

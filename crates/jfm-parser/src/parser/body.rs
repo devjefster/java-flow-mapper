@@ -9,7 +9,7 @@ use crate::model::{
     TypeRef,
 };
 
-use super::annotations::param_source;
+use super::annotations::{extract_annotations, param_source, strip_annotations};
 use super::class::parse_type_ref;
 use super::utils::{
     count_args, line, named_children, node_text, significant_tokens, split_top_level,
@@ -686,13 +686,17 @@ pub fn parse_params(params: &str) -> Vec<ParamInfo> {
     split_top_level(params, ',')
         .into_iter()
         .filter_map(|param| {
-            let tokens = significant_tokens(&param);
+            let annotations = extract_annotations(&param);
+            let without_annotations = strip_annotations(&param);
+            let tokens = significant_tokens(&without_annotations);
             let name = tokens.last()?.clone();
             let ty = tokens.iter().rev().nth(1)?.clone();
             Some(ParamInfo {
                 name,
                 ty,
                 source: param_source(&param),
+                annotations,
+                validation: Vec::new(),
             })
         })
         .collect()

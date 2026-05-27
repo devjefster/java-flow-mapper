@@ -10,6 +10,7 @@ The project is a Rust workspace of focused crates, with the `jfm` binary provide
 - Discovers Spring MVC endpoints from controller mapping annotations.
 - Resolves calls through controllers, services, fields, locals, constructors, interfaces, and Spring Data repositories.
 - Preserves visible control flow for `if`, `switch`, ternary, try/catch/finally, loops, lambdas, method references, stream traversal, and common `Optional` operations.
+- Extracts Bean Validation constraints from DTO fields reached through `@Valid` controller inputs and renders them in Markdown input summaries.
 - Marks unresolved and external calls instead of hiding them.
 - Renders request flows as human-readable Markdown, structured JSON, Mermaid sequence diagrams, or Mermaid flowcharts.
 
@@ -121,6 +122,14 @@ The mapper records source structure and source text. It does not evaluate condit
 
 Mermaid flowcharts use semantic shapes to make the structure easier to scan: project calls, external calls, control/loop nodes, decisions, and terminal paths are rendered differently while preserving Mermaid's default theme styling.
 
+### Bean Validation
+
+Markdown output includes Bean Validation constraints for DTO fields reached from controller parameters annotated with `@Valid`, such as `@Valid @RequestBody CreateUserRequest request`.
+
+Supported built-in constraints are `@NotBlank`, `@NotNull`, `@Email`, `@Min`, `@Max`, `@Size`, and `@Pattern`. Custom constraint annotations are also surfaced when their annotation declaration uses `@Constraint(validatedBy = SomeValidator.class)`.
+
+Validation metadata is attached to the Markdown `## Inputs` section only. JSON and Mermaid intentionally remain focused on flow structure and do not currently include validation metadata.
+
 ### Debug Logging
 
 Enable parser and indexing diagnostics with `RUST_LOG`:
@@ -172,6 +181,7 @@ Implemented:
 - Try/catch/finally rendering with labeled arms
 - Loop rendering with execution cardinality, labeled body arms, and split `for` init/condition/update sections
 - Lambda, method-reference, stream traversal, and `forEach` traversal rendering
+- Bean Validation input summaries in Markdown for `@Valid` DTOs, including selected built-ins and custom `ConstraintValidator` annotations
 - Mermaid sequence and flowchart diagram rendering
 
 Not implemented yet:
@@ -180,7 +190,8 @@ Not implemented yet:
 - `query` subcommand
 - Full Java type inference
 - Symbolic condition evaluation, exception propagation, or data-dependent loop bounds
-- Complete handling for AOP, Bean Validation, Lombok, `@Primary`, or `@Qualifier`
+- Complete handling for AOP, Lombok, `@Primary`, or `@Qualifier`
+- Programmatic Bean Validation calls such as `Validator.validate(obj)`, validation groups, message interpolation, and type-use constraints
 
 ## Repository Layout
 

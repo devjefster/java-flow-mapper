@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tree_sitter::Node;
 
+use super::annotations::{builtin_validation_constraints, extract_annotations, strip_annotations};
 use super::body::{collect_body_elements, collect_locals, parse_params};
 use super::utils::{
     header_text, line, named_children, node_text, significant_tokens, split_top_level, text,
@@ -65,7 +66,10 @@ pub fn collect_classes(
     classes: &mut Vec<ClassInfo>,
 ) {
     match node.kind() {
-        "class_declaration" | "interface_declaration" | "enum_declaration" => {
+        "class_declaration"
+        | "interface_declaration"
+        | "enum_declaration"
+        | "annotation_type_declaration" => {
             classes.push(parse_class(node, source, path, package, imports));
         }
         _ => {
@@ -94,6 +98,7 @@ pub fn parse_class(
     let kind = match node.kind() {
         "interface_declaration" => ClassKind::Interface,
         "enum_declaration" => ClassKind::Enum,
+        "annotation_type_declaration" => ClassKind::Annotation,
         _ => ClassKind::Class,
     };
     let text = text(node, source);
@@ -115,6 +120,8 @@ pub fn parse_class(
         );
     }
 
+    let validation = builtin_validation_constraints(&annotations);
+
     ClassInfo {
         fqn,
         simple_name,
@@ -122,6 +129,7 @@ pub fn parse_class(
         imports: imports.clone(),
         kind,
         annotations,
+        validation,
         extends,
         implements,
         fields,
@@ -170,7 +178,12 @@ fn collect_members(
 /// Parse a field declaration.
 pub fn parse_field(node: Node<'_>, source: &str) -> FieldInfo {
     let declaration = text(node, source);
-    let before_assignment = declaration.split('=').next().unwrap_or(&declaration);
+    let annotations = annotations_from_declaration(&declaration);
+    let without_annotations = strip_annotations(&declaration);
+    let before_assignment = without_annotations
+        .split('=')
+        .next()
+        .unwrap_or(&without_annotations);
     let before_semicolon = before_assignment.trim_end_matches(';').trim();
     let tokens = significant_tokens(before_semicolon);
     let name = tokens.last().cloned().unwrap_or_default();
@@ -184,7 +197,8 @@ pub fn parse_field(node: Node<'_>, source: &str) -> FieldInfo {
     FieldInfo {
         name,
         ty: parse_type_ref(&ty),
-        annotations: annotations_from_declaration(&declaration),
+        validation: builtin_validation_constraints(&annotations),
+        annotations,
     }
 }
 
@@ -262,7 +276,7 @@ pub fn parse_extends(text: &str, kind: &ClassKind) -> Vec<TypeRef> {
     };
     let end_marker = match kind {
         ClassKind::Class => " implements ",
-        ClassKind::Interface | ClassKind::Enum => "{",
+        ClassKind::Interface | ClassKind::Enum | ClassKind::Annotation => "{",
     };
     let extends = after_extends
         .split(end_marker)
@@ -291,8 +305,7 @@ fn annotations_from_declaration(declaration: &str) -> Vec<String> {
         .lines()
         .map(str::trim)
         .take_while(|line| line.starts_with('@') || line.is_empty())
-        .filter(|line| line.starts_with('@'))
-        .map(ToString::to_string)
+        .flat_map(extract_annotations)
         .collect()
 }
 
@@ -347,6 +360,8 @@ fn declaration_name(node: Node<'_>, source: &str) -> Option<String> {
         "interface"
     } else if node.kind() == "enum_declaration" {
         "enum"
+    } else if node.kind() == "annotation_type_declaration" {
+        "@interface"
     } else {
         "class"
     };
