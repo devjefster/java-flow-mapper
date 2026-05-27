@@ -1,6 +1,7 @@
 package com.example.demo.dto;
 
 import jakarta.validation.constraints.*;
+import com.example.demo.validation.CompanyEmail;
 import com.example.demo.validation.ValidationMessages;
 
 public class CreateUserRequest {
@@ -11,6 +12,7 @@ public class CreateUserRequest {
 
     @NotBlank(message = ValidationMessages.EMAIL_REQUIRED)
     @Email(message = ValidationMessages.INVALID_EMAIL)
+    @CompanyEmail
     private String email;
 
     @NotNull

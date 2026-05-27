@@ -1,6 +1,7 @@
 package com.example.demo.dto;
 
 import jakarta.validation.constraints.*;
+import com.example.demo.validation.CompanyEmail;
 import com.example.demo.validation.ValidationMessages;
 
 public class UpdateUserRequest {
@@ -9,6 +10,7 @@ public class UpdateUserRequest {
     private String name;
 
     @Email(message = ValidationMessages.INVALID_EMAIL)
+    @CompanyEmail
     private String email;
 
     @Min(value = 18, message = ValidationMessages.AGE_MINIMUM)
