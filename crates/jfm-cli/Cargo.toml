@@ -7,14 +7,17 @@ edition.workspace = true
 anyhow.workspace = true
 clap.workspace = true
 jfm-flow.workspace = true
+jfm-graph.workspace = true
 jfm-model.workspace = true
 jfm-parser.workspace = true
 jfm-render.workspace = true
+serde_json.workspace = true
 tracing-subscriber.workspace = true
 
 [dev-dependencies]
 assert_cmd.workspace = true
 insta.workspace = true
+tempfile.workspace = true
 
 [[bin]]
 name = "jfm"

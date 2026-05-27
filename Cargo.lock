@@ -1886,9 +1886,12 @@ dependencies = [
  "clap",
  "insta",
  "jfm-flow",
+ "jfm-graph",
  "jfm-model",
  "jfm-parser",
  "jfm-render",
+ "serde_json",
+ "tempfile",
  "tracing-subscriber",
 ]
 

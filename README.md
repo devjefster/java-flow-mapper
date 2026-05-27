@@ -22,6 +22,16 @@ The demo Spring project under `demo-api/demo` is a fixture for exercising the ma
 
 ## Usage
 
+Build or refresh the local project index cache:
+
+```sh
+cargo run -- index demo-api/demo
+```
+
+The default cache location is `<root>/.jfm/index`. Pass `--graph-dir <path>` to use a different SurrealDB cache directory.
+
+For every command that accepts `<root>`, omitting it uses the current directory as the Java project root.
+
 Run the main demo flow:
 
 ```sh
@@ -41,6 +51,20 @@ cargo run -- flow demo-api/demo "POST /users"
 cargo run -- flow demo-api/demo "GET /users"
 cargo run -- flow demo-api/demo "PUT /users/{id}"
 cargo run -- flow demo-api/demo "DELETE /users/{id}"
+```
+
+List cached entrypoints after indexing:
+
+```sh
+cargo run -- entrypoints demo-api/demo
+cargo run -- entrypoints demo-api/demo --method GET --path-prefix /users --format json
+```
+
+Inspect cached index and flow health:
+
+```sh
+cargo run -- doctor demo-api/demo
+cargo run -- doctor demo-api/demo --format json
 ```
 
 ### Output Formats
@@ -134,9 +158,14 @@ Review snapshot diffs before accepting them.
 Implemented:
 
 - `jfm flow <root> "<VERB> <PATH>"`
+- `jfm flow "<VERB> <PATH>"` from the project root
+- `jfm index <root> [--graph-dir <path>]`
+- `jfm entrypoints <root> [--method VERB] [--path-prefix PATH] [--format markdown|json] [--graph-dir <path>]`
+- `jfm doctor <root> [--format markdown|json] [--graph-dir <path>]`
 - `--format markdown|json|mermaid`
 - `--diagram sequence|flowchart` for Mermaid output
 - `--max-depth N`
+- SurrealDB-backed `ProjectIndex` cache through `crates/jfm-graph`
 - Spring MVC endpoint discovery
 - Spring Data repository method recognition for common repository base interfaces
 - Branch rendering for `if`, `switch`, ternary, and `Optional` control flow
@@ -147,9 +176,8 @@ Implemented:
 
 Not implemented yet:
 
-- CLI wiring for the `jfm-graph` cache (the SurrealDB-backed `SurrealGraphStore` exists as an internal `ProjectIndex` round-trip API but no `jfm index` / `jfm cache` subcommand consumes it yet)
 - Graph-shaped schema with first-class `Class` / `Method` / `Endpoint` records and `CALLS` / `EXPOSES` edges for ad-hoc queries
-- `index`, `entrypoints`, `query`, or `doctor` subcommands
+- `query` subcommand
 - Full Java type inference
 - Symbolic condition evaluation, exception propagation, or data-dependent loop bounds
 - Complete handling for AOP, Bean Validation, Lombok, `@Primary`, or `@Qualifier`

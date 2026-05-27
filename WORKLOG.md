@@ -429,3 +429,23 @@ Known deferrals:
 - `MethodInfo.body` recursive trees survive round-trip via plain serde, not flattened into graph edges.
 - No incremental update API — `save_project_index` overwrites the cache record in one shot.
 
+## 2026-05-27 - Cached index CLI commands
+
+Wired the SurrealDB-backed `ProjectIndex` cache into user-facing CLI commands:
+
+- Added `jfm index <root> [--graph-dir <path>]` to parse a Java project and save the resulting `ProjectIndex` through `SurrealGraphStore::save_project_index`.
+- Added a shared default cache location at `<root>/.jfm/index`, while preserving `--graph-dir` for tests and alternate cache locations.
+- Added `jfm entrypoints <root> [--method VERB] [--path-prefix PATH] [--format markdown|json] [--graph-dir <path>]` to list cached Spring MVC endpoints without reparsing source.
+- Added `jfm doctor <root> [--format markdown|json] [--graph-dir <path>]` to load the cached index, build each endpoint flow, and report class/method/endpoint totals, flow build status, confidence counts, and unresolved warnings.
+- Kept `jfm flow` on the existing direct parse/build path; it does not consume the cache yet.
+- Added focused CLI integration tests for index cache creation, entrypoint listing/filtering/missing-cache errors, and doctor Markdown/JSON/missing-cache errors.
+- Updated README usage and current-scope notes for the new commands.
+- Added current-directory root defaults for all root-taking commands: `index`, `entrypoints`, `doctor`, and `flow "<VERB> <PATH>"`.
+- Added focused integration tests for omitted-root behavior across `index`, `entrypoints`, `doctor`, and `flow`.
+
+Known deferrals:
+
+- `jfm query` remains deferred because the SurrealDB store is still a single `cache:main` blob record, not a first-class queryable graph schema.
+- `entrypoints` and `doctor` do not silently reparse when the cache is missing; users must run `jfm index` first.
+- The cache does not yet record index metadata such as timestamp, schema version, or Java file count.
+- `jfm flow` still reparses source each run instead of reading the cached `ProjectIndex`.
