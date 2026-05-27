@@ -12,9 +12,9 @@ flowchart TD
     n3{{"loop for-each User user : users (0..n)"}}
     n2 --> n3
     n4{"if Boolean.TRUE.equals(user.getActive())"}
+    n3 -->|"body"| n4
     n5[["User#getActive()"]]
-    n3 -->|"body"| n5
-    n5 -->|"condition"| n4
+    n4 -->|"condition"| n5
     n6[["UserService#toResponse(User)"]]
     n4 -->|"then"| n6
     n7["(truncated, 2 more levels)"]

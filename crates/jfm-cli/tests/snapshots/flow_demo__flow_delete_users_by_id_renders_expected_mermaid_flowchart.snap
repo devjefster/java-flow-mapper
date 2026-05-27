@@ -7,34 +7,35 @@ flowchart TD
     n0[["UserController#delete(Long)"]]
     n1[["UserService#delete(Long)"]]
     n0 --> n1
-    n2[["UserService#findUserOrThrow(Long)"]]
     n1 --> n2
-    n3{{"Optional#orElseThrow(Supplier) - control flow (Optional)"}}
-    n4(["UserRepository#findById(Long) - external (Spring Data JPA)"])
-    n2 --> n4
-    n4 -->|"input"| n3
-    n5{"optional"}
-    n3 --> n5
-    n6["lambda: () -> new BusinessException(ErrorCode.USER_NOT_FOUND)"]
-    n5 -->|"empty terminates"| n6
-    n7[["BusinessException#<init>(ErrorCode)"]]
-    n6 --> n7
-    n8[["ErrorCode#getDefaultMessage()"]]
-    n7 --> n8
-    n9(["terminates"])
-    n8 -->|"terminates"| n9
-    n10{"if Boolean.TRUE.equals(user.getActive())"}
-    n11[["User#getActive()"]]
-    n5 --> n11
-    n11 -->|"condition"| n10
-    n12[["BusinessException#<init>(ErrorCode)"]]
-    n10 -->|"then terminates"| n12
-    n13[["ErrorCode#getDefaultMessage()"]]
-    n12 --> n13
-    n14(["terminates"])
-    n13 -->|"terminates"| n14
-    n15(["UserRepository#delete(User) - external (Spring Data JPA)"])
-    n10 --> n15
+    subgraph sg0["findUserOrThrow"]
+        direction LR
+        n2[["UserService#findUserOrThrow(Long)"]]
+        n3{{"Optional#orElseThrow(Supplier) - control flow (Optional)"}}
+        n2 --> n3
+        n4(["UserRepository#findById(Long) - external (Spring Data JPA)"])
+        n3 -->|"input"| n4
+        n5["lambda: () -> new BusinessException(ErrorCode.USER_NOT_FOUND)"]
+        n3 -->|"empty"| n5
+    end
+    subgraph sg1["BusinessException"]
+        direction LR
+        n6[["BusinessException#<init>(ErrorCode)"]]
+        n7[["ErrorCode#getDefaultMessage()"]]
+        n6 --> n7
+        n8(["terminates"])
+        n7 -->|"terminates"| n8
+    end
+    n5 --> n6
+    n9{"if Boolean.TRUE.equals(user.getActive())"}
+    n2 --> n9
+    n10[["User#getActive()"]]
+    n9 -->|"condition"| n10
+    n9 -->|"then terminates"| n6
+    n11(["UserRepository#delete(User) - external (Spring Data JPA)"])
+    n9 --> n11
+    classDef exceptionFlow fill:#fde2e2,stroke:#dc2626,color:#7f1d1d
+    class n6,n7,n8 exceptionFlow
     %% Notes:
     %% - Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
     %% - Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.

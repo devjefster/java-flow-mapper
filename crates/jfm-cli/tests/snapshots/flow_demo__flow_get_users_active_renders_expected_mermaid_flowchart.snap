@@ -12,28 +12,27 @@ flowchart TD
     n3{{"loop for-each User user : users (0..n)"}}
     n2 --> n3
     n4{"if Boolean.TRUE.equals(user.getActive())"}
+    n3 -->|"body"| n4
     n5[["User#getActive()"]]
-    n3 -->|"body"| n5
-    n5 -->|"condition"| n4
-    n6[["UserService#toResponse(User)"]]
+    n4 -->|"condition"| n5
     n4 -->|"then"| n6
-    n7[["UserResponse#<init>(Long, String, String, Integer, Boolean)"]]
-    n8[["User#getId()"]]
-    n6 --> n8
-    n8 -->|"input"| n7
-    n9[["User#getName()"]]
-    n6 --> n9
-    n9 -->|"input"| n7
-    n10[["User#getEmail()"]]
-    n6 --> n10
-    n10 -->|"input"| n7
-    n11[["User#getAge()"]]
-    n6 --> n11
-    n11 -->|"input"| n7
-    n12[["User#getActive()"]]
-    n6 --> n12
-    n12 -->|"input"| n7
-    n7 -->|"next"| n3
+    subgraph sg0["toResponse"]
+        direction LR
+        n6[["UserService#toResponse(User)"]]
+        n7[["UserResponse#<init>(Long, String, String, Integer, Boolean)"]]
+        n6 --> n7
+        n8[["User#getId()"]]
+        n7 -->|"input"| n8
+        n9[["User#getName()"]]
+        n7 -->|"input"| n9
+        n10[["User#getEmail()"]]
+        n7 -->|"input"| n10
+        n11[["User#getAge()"]]
+        n7 -->|"input"| n11
+        n12[["User#getActive()"]]
+        n7 -->|"input"| n12
+    end
+    n6 -->|"next"| n3
     n4 -->|"next"| n3
     n13{{"List#forEach(Consumer) - control flow (traversal)"}}
     n3 --> n13
@@ -41,15 +40,18 @@ flowchart TD
     n13 --> n14
     n15["method ref: this::requireResponseEmail"]
     n14 -->|"body"| n15
-    n16[["UserService#requireResponseEmail(UserResponse)"]]
     n15 --> n16
-    n17{"if response.getEmail() == null"}
-    n18[["UserResponse#getEmail()"]]
-    n16 --> n18
-    n18 -->|"condition"| n17
-    n19(["terminates"])
-    n17 -->|"terminates"| n19
-    n17 -->|"next"| n14
+    subgraph sg1["requireResponseEmail"]
+        direction LR
+        n16[["UserService#requireResponseEmail(UserResponse)"]]
+        n17{"if response.getEmail() == null"}
+        n16 --> n17
+        n18[["UserResponse#getEmail()"]]
+        n17 -->|"condition"| n18
+        n19(["terminates"])
+        n17 -->|"terminates"| n19
+    end
+    n16 -->|"next"| n14
     %% Notes:
     %% - Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
     %% - Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.

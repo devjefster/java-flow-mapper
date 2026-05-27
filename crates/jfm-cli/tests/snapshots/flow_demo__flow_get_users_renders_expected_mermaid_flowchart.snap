@@ -8,32 +8,31 @@ flowchart TD
     n1[["UserService#findAll()"]]
     n0 --> n1
     n2{{"Stream#map(Function) - control flow (traversal)"}}
+    n1 --> n2
     n3(["UserRepository#findAll() - external (Spring Data JPA)"])
-    n1 --> n3
-    n3 -->|"input"| n2
+    n2 -->|"input"| n3
     n4{{"loop stream Stream.map (0..n)"}}
     n2 --> n4
     n5["method ref: this::toResponse"]
     n4 -->|"body"| n5
-    n6[["UserService#toResponse(User)"]]
     n5 --> n6
-    n7[["UserResponse#<init>(Long, String, String, Integer, Boolean)"]]
-    n8[["User#getId()"]]
-    n6 --> n8
-    n8 -->|"input"| n7
-    n9[["User#getName()"]]
-    n6 --> n9
-    n9 -->|"input"| n7
-    n10[["User#getEmail()"]]
-    n6 --> n10
-    n10 -->|"input"| n7
-    n11[["User#getAge()"]]
-    n6 --> n11
-    n11 -->|"input"| n7
-    n12[["User#getActive()"]]
-    n6 --> n12
-    n12 -->|"input"| n7
-    n7 -->|"next"| n4
+    subgraph sg0["toResponse"]
+        direction LR
+        n6[["UserService#toResponse(User)"]]
+        n7[["UserResponse#<init>(Long, String, String, Integer, Boolean)"]]
+        n6 --> n7
+        n8[["User#getId()"]]
+        n7 -->|"input"| n8
+        n9[["User#getName()"]]
+        n7 -->|"input"| n9
+        n10[["User#getEmail()"]]
+        n7 -->|"input"| n10
+        n11[["User#getAge()"]]
+        n7 -->|"input"| n11
+        n12[["User#getActive()"]]
+        n7 -->|"input"| n12
+    end
+    n6 -->|"next"| n4
     %% Notes:
     %% - Stream, Optional, and common JDK chain operators use a small hardcoded return-shape table; this is not a general type inferencer.
     %% - Optional.orElseThrow return type is flattened to Object; generic-aware unwrapping is intentionally deferred.
