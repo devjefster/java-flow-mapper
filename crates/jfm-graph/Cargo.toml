@@ -1,0 +1,16 @@
+[package]
+name = "jfm-graph"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+jfm-model = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+surrealdb = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

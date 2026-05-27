@@ -10,8 +10,10 @@ use std::collections::HashMap;
 use std::fmt;
 use std::path::PathBuf;
 
+use serde::{Deserialize, Serialize};
+
 /// Output format selected by the CLI.
-#[derive(Clone, Copy, Debug, clap::ValueEnum)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, clap::ValueEnum)]
 pub enum Format {
     /// Human-readable Markdown.
     Markdown,
@@ -22,7 +24,7 @@ pub enum Format {
 }
 
 /// Mermaid diagram shape selected by the CLI.
-#[derive(Clone, Copy, Debug, clap::ValueEnum)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, clap::ValueEnum)]
 pub enum Diagram {
     /// Message-oriented Mermaid sequence diagram.
     Sequence,
@@ -31,7 +33,8 @@ pub enum Diagram {
 }
 
 /// Fully qualified symbol name used as a stable key across indexes and flows.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[serde(transparent)]
 pub struct Fqn(pub String);
 
 impl fmt::Display for Fqn {
@@ -41,7 +44,7 @@ impl fmt::Display for Fqn {
 }
 
 /// How confidently a call target was resolved.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum Confidence {
     /// A concrete project method matched directly.
     Resolved,
@@ -60,7 +63,7 @@ pub enum Confidence {
 }
 
 /// External target classification used by rendered notes and JSON.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum ExternalKind {
     /// Java, javax, or Jakarta APIs.
     Jdk,
@@ -75,7 +78,7 @@ pub enum ExternalKind {
 }
 
 /// Known external calls that behave like control flow.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum ControlKind {
     /// Java `Optional` methods with present/empty arms.
     Optional,
@@ -84,7 +87,7 @@ pub enum ControlKind {
 }
 
 /// HTTP verb for a Spring endpoint.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum HttpVerb {
     Get,
     Post,
@@ -121,7 +124,7 @@ impl fmt::Display for HttpVerb {
 }
 
 /// Spring MVC endpoint discovered from mapping annotations.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Endpoint {
     pub verb: HttpVerb,
     pub path: String,
@@ -131,7 +134,7 @@ pub struct Endpoint {
 }
 
 /// Method parameter with the request source, when known.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ParamInfo {
     pub name: String,
     pub ty: String,
@@ -139,7 +142,7 @@ pub struct ParamInfo {
 }
 
 /// Request binding source for a method parameter.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum ParamSource {
     Path,
     Query,
@@ -149,7 +152,7 @@ pub enum ParamSource {
 }
 
 /// Parsed Java class or interface.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ClassInfo {
     pub fqn: Fqn,
     pub simple_name: String,
@@ -166,7 +169,7 @@ pub struct ClassInfo {
 }
 
 /// Java type declaration kind supported by the parser.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum ClassKind {
     Class,
     Interface,
@@ -174,14 +177,14 @@ pub enum ClassKind {
 }
 
 /// Java type reference, preserving the raw spelling and top-level generics.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct TypeRef {
     pub raw: String,
     pub generics: Vec<String>,
 }
 
 /// Parsed field used for receiver/type resolution.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct FieldInfo {
     pub name: String,
     pub ty: TypeRef,
@@ -189,7 +192,7 @@ pub struct FieldInfo {
 }
 
 /// Parsed method or constructor with body elements and local variable types.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct MethodInfo {
     pub fqn: Fqn,
     pub name: String,
@@ -203,7 +206,7 @@ pub struct MethodInfo {
 }
 
 /// Source-level method body element before flow expansion.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum BodyElement {
     /// A method or constructor call.
     Call(CallSite),
@@ -214,7 +217,7 @@ pub enum BodyElement {
 }
 
 /// Lambda or method reference captured from call arguments.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct LambdaSyntax {
     pub kind: LambdaKind,
     pub source: String,
@@ -222,7 +225,7 @@ pub struct LambdaSyntax {
 }
 
 /// Java inline function syntax carried by a call argument.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum LambdaKind {
     /// Lambda expression such as `x -> work(x)`.
     Lambda,
@@ -231,7 +234,7 @@ pub enum LambdaKind {
 }
 
 /// Parsed branch structure before call targets are resolved.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct BranchSyntax {
     pub kind: BranchKind,
     pub condition_src: String,
@@ -244,7 +247,7 @@ pub struct BranchSyntax {
 }
 
 /// Parsed branch arm before call targets are resolved.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct BranchArmSyntax {
     pub label: String,
     pub body: Vec<BodyElement>,
@@ -252,7 +255,7 @@ pub struct BranchArmSyntax {
 }
 
 /// Parsed loop structure before call targets are resolved.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct LoopSyntax {
     pub kind: LoopKind,
     pub source: String,
@@ -265,21 +268,21 @@ pub struct LoopSyntax {
 }
 
 /// Parsed loop arm before call targets are resolved.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct LoopArmSyntax {
     pub label: String,
     pub body: Vec<BodyElement>,
 }
 
 /// Loop-scoped local variable, currently used for enhanced-for variables.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct LoopLocal {
     pub name: String,
     pub ty: TypeRef,
 }
 
 /// Parsed call site with enough receiver information for resolution.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CallSite {
     pub receiver: ReceiverKind,
     pub method_name: String,
@@ -290,7 +293,7 @@ pub struct CallSite {
 }
 
 /// Receiver shape extracted from Java call syntax.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum ReceiverKind {
     /// Implicit or explicit call on the current class.
     This,
@@ -307,7 +310,7 @@ pub enum ReceiverKind {
 }
 
 /// In-memory index of parsed project symbols and endpoints.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct ProjectIndex {
     pub classes: HashMap<Fqn, ClassInfo>,
     pub by_simple_name: HashMap<String, Vec<Fqn>>,
@@ -315,7 +318,7 @@ pub struct ProjectIndex {
 }
 
 /// Resolved call flow for one endpoint.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Flow {
     pub endpoint: Endpoint,
     pub inputs: Vec<ParamInfo>,
@@ -325,7 +328,7 @@ pub struct Flow {
 }
 
 /// Call that could not be resolved, with a human-readable reason.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct UnresolvedRef {
     pub receiver_type: String,
     pub method_name: String,
@@ -333,7 +336,7 @@ pub struct UnresolvedRef {
 }
 
 /// Resolved call node in the flow graph.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CallNode {
     pub method_fqn: Fqn,
     pub confidence: Confidence,
@@ -346,7 +349,7 @@ pub struct CallNode {
 }
 
 /// Renderable flow graph node.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum FlowNode {
     /// A method, constructor, external, or unresolved call.
     Call(CallNode),
@@ -359,7 +362,7 @@ pub enum FlowNode {
 }
 
 /// Expanded lambda or method reference in the flow graph.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct LambdaNode {
     pub kind: LambdaKind,
     pub source: String,
@@ -367,7 +370,7 @@ pub struct LambdaNode {
 }
 
 /// Expanded branch in the flow graph.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct BranchNode {
     pub kind: BranchKind,
     pub condition_src: String,
@@ -376,7 +379,7 @@ pub struct BranchNode {
 }
 
 /// Expanded loop in the flow graph.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct LoopNode {
     pub kind: LoopKind,
     pub source: String,
@@ -388,14 +391,14 @@ pub struct LoopNode {
 }
 
 /// Expanded loop arm in the flow graph.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct LoopArm {
     pub label: String,
     pub children: Vec<FlowNode>,
 }
 
 /// Labeled branch arm with termination metadata.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Arm {
     pub label: String,
     pub terminates: bool,
@@ -403,7 +406,7 @@ pub struct Arm {
 }
 
 /// Branch source modeled by the flow graph.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum BranchKind {
     /// Source-level `if`.
     If,
@@ -418,7 +421,7 @@ pub enum BranchKind {
 }
 
 /// Loop source modeled by the flow graph.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum LoopKind {
     For,
     EnhancedFor,
@@ -429,14 +432,14 @@ pub enum LoopKind {
 }
 
 /// Conservative execution cardinality for loop bodies.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum LoopExecution {
     ZeroOrMore,
     OneOrMore,
 }
 
 /// Scope metadata for calls that need renderer-visible context.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum Scope {
     /// Call resolved to another method on the same class.
     IntraClass,

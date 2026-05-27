@@ -147,7 +147,8 @@ Implemented:
 
 Not implemented yet:
 
-- Persistent graph storage or Kuzu integration
+- CLI wiring for the `jfm-graph` cache (the SurrealDB-backed `SurrealGraphStore` exists as an internal `ProjectIndex` round-trip API but no `jfm index` / `jfm cache` subcommand consumes it yet)
+- Graph-shaped schema with first-class `Class` / `Method` / `Endpoint` records and `CALLS` / `EXPOSES` edges for ad-hoc queries
 - `index`, `entrypoints`, `query`, or `doctor` subcommands
 - Full Java type inference
 - Symbolic condition evaluation, exception propagation, or data-dependent loop bounds
@@ -158,6 +159,7 @@ Not implemented yet:
 ```text
 crates/jfm-cli/      Binary crate, Clap wiring, and command orchestration
 crates/jfm-flow/     Flow expansion and call resolution
+crates/jfm-graph/    Embedded SurrealDB store for round-tripping ProjectIndex
 crates/jfm-model/    Shared data contracts
 crates/jfm-parser/   Java parsing and project indexing
 crates/jfm-render/   Markdown, JSON, and Mermaid renderers

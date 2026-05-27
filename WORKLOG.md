@@ -400,3 +400,32 @@ Verified:
 - `cargo run -- flow demo-api/demo "GET /users/{id}"`
 - `cargo run -- flow demo-api/demo "GET /users/{id}" --format json`
 - `cargo run -- flow demo-api/demo "GET /users/{id}" --format mermaid`
+
+## 2026-05-26 - ProjectIndex cache via SurrealDB
+
+Added a new `crates/jfm-graph` crate that round-trips `ProjectIndex` through an embedded SurrealDB:
+
+- Initially scaffolded against Kuzu `0.11.3` but hit a `cxx` (1.0.138) vs `cxx-build` (1.0.194) symbol-mangling skew on arm64 macOS, surfacing as `_kuzu_rs$cxxbridge1$*` undefined symbols at link time. Pinning `cxx-build` to 1.0.138 cleared the link, but the heavy native build and a duplicate `kuzu_test/` probe were not worth keeping for a round-trip-only use case.
+- Pivoted to SurrealDB with the pure-Rust `kv-surrealkv` backend. First compile is ~1m 30s and there are no native link steps.
+- Added `SurrealGraphStore::{open, save_project_index, load_project_index}` driven by a `tokio` current-thread runtime owned by the store, so the public API stays synchronous from the caller's perspective.
+- Stored the entire `ProjectIndex` as a single `cache:main` record wrapping a `CachedIndex { index }` payload. Schema is intentionally minimal; first-class node/edge modeling can be added when ad-hoc query use cases arrive.
+- Added `Serialize`/`Deserialize` derives across the `jfm-model` data types. Marked `Fqn` `#[serde(transparent)]` so it round-trips as a bare string inside `HashMap<Fqn, ClassInfo>` keys.
+- Added round-trip tests for empty index, a hand-built `UserController` + `getUser` endpoint, and save-overwrites-prior-record.
+- Removed the `kuzu_test/` workspace member and the `kuzu_verification.rs` test now that Kuzu is gone.
+- Promoted `surrealdb`, `tokio`, `tempfile`, and `jfm-graph` into `[workspace.dependencies]` so version drift between crates is no longer possible.
+
+Verified:
+
+- `cargo build --workspace`
+- `cargo test -p jfm-graph`
+- `cargo test --workspace`
+- `cargo clippy --workspace --all-targets`
+- `cargo fmt --check`
+
+Known deferrals:
+
+- `jfm-cli` does not call into `jfm-graph` yet; the API is internal until a cache subcommand or query use case lands.
+- Schema is a single blob record; first-class `Class` / `Method` / `Endpoint` graph relations and `CALLS` / `EXPOSES` edges are deferred until queries justify them.
+- `MethodInfo.body` recursive trees survive round-trip via plain serde, not flattened into graph edges.
+- No incremental update API — `save_project_index` overwrites the cache record in one shot.
+
