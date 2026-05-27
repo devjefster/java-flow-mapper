@@ -477,3 +477,30 @@ Known deferrals:
 - Programmatic validation through `Validator.validate(obj)` is not modeled.
 - Validation groups, message interpolation, payloads, and type-use constraints are not interpreted.
 - Validation metadata is not exposed in JSON or Mermaid yet.
+
+## 2026-05-27 - Mermaid flowchart readability pass
+
+Reworked the Mermaid flowchart renderer to make control-flow diagrams more readable, especially around Optional paths, exceptions, and shared helper calls:
+
+- Added reusable flowchart node tracking so repeated meaningful calls, such as exception constructors and helper methods with children, render once instead of duplicating identical nodes.
+- Added method subgraphs for nested resolved project calls, with cross-subgraph edges deferred to top level so Mermaid does not link from inside one subgraph to a node owned by another.
+- Rendered exception constructor flows as separate subgraphs with light red styling for the exception path.
+- Simplified Optional flowchart rendering by removing the synthetic `optional` decision node and using direct `empty` edges from the Optional control call.
+- Changed branch condition rendering so `if` / `switch` / ternary nodes remain on the main spine and condition calls hang off them as `condition` dependencies.
+- Changed call input rendering so constructors, setters, and other operation calls stay on the main path while getter/input calls hang off as `input` dependencies.
+- Treated shared resolved calls with children, such as `Normalizers#normalizeEmail(String)`, as independent reusable subgraphs instead of nesting them under the first caller.
+- Tuned reuse for complex diagrams by no longer globally reusing leaf getter/setter calls, which reduced long sweeping edges in `POST /users` and `PUT /users/{id}` flowcharts.
+- Refreshed all Mermaid flowchart snapshots under `crates/jfm-cli/tests/snapshots/`.
+
+Verified:
+
+- `cargo test -p jfm-render`
+- `cargo test -p jfm-cli --test flow_demo mermaid_flowchart`
+- `cargo fmt --check`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+- `cargo test`
+
+Known deferrals:
+
+- Very large flowcharts are still constrained by Mermaid layout behavior; a future complex-flow mode should collapse method internals by default and allow focused expansion.
+- Flowcharts remain structural and do not infer runtime branch truth, exception routing, or data-dependent loop exits.
