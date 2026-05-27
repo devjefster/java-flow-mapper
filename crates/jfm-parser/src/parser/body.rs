@@ -16,6 +16,8 @@ use super::utils::{
     starts_uppercase, strip_generics, text,
 };
 
+const MAX_RENDERED_CHAIN_INPUT_DEPTH: usize = 4;
+
 /// Collect renderable body elements from a Java syntax node.
 pub fn collect_body_elements(node: Node<'_>, source: &str) -> Vec<BodyElement> {
     let mut elements = Vec::new();
@@ -523,13 +525,15 @@ pub fn parse_method_invocation(node: Node<'_>, source: &str) -> Option<CallSite>
     let receiver_node = node
         .child_by_field_name("object")
         .or_else(|| node.child_by_field_name("scope"));
-    let receiver = node
-        .child_by_field_name("object")
-        .or_else(|| node.child_by_field_name("scope"))
-        .map(|receiver| receiver_kind(receiver, source))
-        .unwrap_or(ReceiverKind::This);
+    let receiver_call = receiver_node
+        .filter(|receiver| receiver.kind() == "method_invocation")
+        .and_then(|receiver| parse_method_invocation(receiver, source));
     let arguments_node = node.child_by_field_name("arguments");
-    let inputs = call_inputs(receiver_node, arguments_node, source);
+    let inputs = call_inputs(receiver_call.as_ref(), arguments_node, source);
+    let receiver = receiver_call
+        .map(|call| ReceiverKind::Chain(Box::new(call)))
+        .or_else(|| receiver_node.map(|receiver| receiver_kind(receiver, source)))
+        .unwrap_or(ReceiverKind::This);
     let lambdas = node
         .child_by_field_name("arguments")
         .map(|arguments| lambda_arguments(arguments, source))
@@ -575,21 +579,27 @@ pub fn parse_constructor_invocation(node: Node<'_>, source: &str) -> Option<Call
 }
 
 fn call_inputs(
-    receiver_node: Option<Node<'_>>,
+    receiver_call: Option<&CallSite>,
     arguments_node: Option<Node<'_>>,
     source: &str,
 ) -> Vec<BodyElement> {
     let mut inputs = Vec::new();
-    if let Some(receiver) = receiver_node
-        && receiver.kind() == "method_invocation"
-        && let Some(call) = parse_method_invocation(receiver, source)
+    if let Some(call) = receiver_call
+        && chain_depth(call) <= MAX_RENDERED_CHAIN_INPUT_DEPTH
     {
-        inputs.push(BodyElement::Call(call));
+        inputs.push(BodyElement::Call(call.clone()));
     }
     if let Some(arguments) = arguments_node {
         inputs.extend(collect_body_elements(arguments, source));
     }
     inputs
+}
+
+fn chain_depth(call: &CallSite) -> usize {
+    match &call.receiver {
+        ReceiverKind::Chain(inner) => 1 + chain_depth(inner),
+        _ => 1,
+    }
 }
 
 /// Collect local variable declarations visible within a method body.
@@ -616,14 +626,11 @@ pub fn parse_local_declaration(declaration: &str) -> Option<(String, TypeRef)> {
 }
 
 fn receiver_kind(node: Node<'_>, source: &str) -> ReceiverKind {
-    if node.kind() == "method_invocation"
-        && let Some(call) = parse_method_invocation(node, source)
-    {
-        return ReceiverKind::Chain(Box::new(call));
-    }
-
     let receiver = text(node, source);
     let trimmed = receiver.trim();
+    if let Some(field) = trimmed.strip_prefix("this.") {
+        return ReceiverKind::Field(field.split('.').next().unwrap_or(field).to_string());
+    }
     // Complex receiver expressions are kept unresolved until a fuller type pass exists.
     if trimmed.contains('(') {
         return ReceiverKind::TypeName("Unknown".to_string());
