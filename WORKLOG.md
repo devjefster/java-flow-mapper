@@ -504,3 +504,37 @@ Known deferrals:
 
 - Very large flowcharts are still constrained by Mermaid layout behavior; a future complex-flow mode should collapse method internals by default and allow focused expansion.
 - Flowcharts remain structural and do not infer runtime branch truth, exception routing, or data-dependent loop exits.
+
+## 2026-05-27 - CLI performance investigation
+
+Investigated poor CLI performance against `/Users/jefsterfarlei/projects/flxpoint/dmx-backend` and fixed the main cache/indexing bottlenecks:
+
+- Measured the real repository baseline: 644 Java files, 779 endpoints, `index` around 58.6s, cached `entrypoints` around 2.9s, uncached `flow` around 1.6s, and cached `doctor` around 3.0s.
+- Added debug timing around CLI phases, parser indexing, and graph cache open/load/save so `RUST_LOG=debug` can show parse/cache/render costs directly.
+- Updated `jfm flow` to accept `--graph-dir` and reuse the default cache at `<root>/.jfm/index` when present, falling back to direct parsing when no cache exists.
+- Changed the SurrealDB cache payload to store a single serialized JSON index string instead of letting Surreal encode the full nested `ProjectIndex` shape, removing the slow cache write path.
+- Skipped `.jfm` during parser project walks so indexing does not traverse its own cache directory.
+- Removed duplicated legacy branch fields from `BranchSyntax`; branch parser tests now assert against the canonical `arms` representation.
+- Documented cache-backed `flow` behavior in `README.md`.
+
+Measured after the change on `dmx-backend`:
+
+- `index`: ~4.45s
+- `entrypoints --format json`: ~0.79s
+- cached `flow` Markdown: ~0.79s
+- cached `flow --format mermaid --diagram flowchart`: ~0.86s
+- `doctor --format json`: ~1.06s
+
+Verified:
+
+- `cargo test -p jfm-parser parser::tests`
+- `cargo test -p jfm-graph`
+- `cargo test -p jfm-cli --test flow_demo flow_uses_cached_index_when_graph_dir_is_available`
+- `cargo test`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+- `cargo fmt --check`
+
+Known deferrals:
+
+- `doctor` still rebuilds flows independently per endpoint; shared flow memoization remains a future optimization if large repositories expose it as a bottleneck.
+- The cache is still a whole-index payload rather than a queryable graph schema or incremental per-file cache.

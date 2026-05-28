@@ -24,10 +24,10 @@ fn parses_if_without_else_and_marks_throwing_then_arm() {
         panic!("expected first body element to be a branch");
     };
     assert_eq!(branch.condition_src, "user == null");
-    assert!(branch.then_terminates);
-    assert!(branch.else_arm.is_none());
+    assert!(branch_arm(branch, "then").terminates);
+    assert!(branch.arms.iter().all(|arm| arm.label != "else"));
     assert_eq!(
-        call_name(&branch.then_arm[0]),
+        call_name(&branch_arm_body(branch, "then")[0]),
         "IllegalArgumentException#<init>"
     );
     assert_eq!(call_name(&method.body[1]), "save");
@@ -54,8 +54,8 @@ fn parses_if_else_with_both_arms_populated() {
         panic!("expected branch");
     };
     assert_eq!(call_name(&branch.condition_calls[0]), "ready");
-    assert_eq!(call_name(&branch.then_arm[0]), "yes");
-    assert_eq!(call_name(&branch.else_arm.as_ref().unwrap()[0]), "no");
+    assert_eq!(call_name(&branch_arm_body(branch, "then")[0]), "yes");
+    assert_eq!(call_name(&branch_arm_body(branch, "else")[0]), "no");
 }
 
 #[test]
@@ -78,12 +78,12 @@ fn preserves_nested_if_structure_inside_arm() {
     let BodyElement::Branch(outer) = &method.body[0] else {
         panic!("expected outer branch");
     };
-    let BodyElement::Branch(inner) = &outer.then_arm[0] else {
+    let BodyElement::Branch(inner) = &branch_arm_body(outer, "then")[0] else {
         panic!("expected nested branch");
     };
     assert_eq!(call_name(&outer.condition_calls[0]), "outer");
     assert_eq!(call_name(&inner.condition_calls[0]), "inner");
-    assert_eq!(call_name(&inner.then_arm[0]), "work");
+    assert_eq!(call_name(&branch_arm_body(inner, "then")[0]), "work");
 }
 
 #[test]
@@ -118,7 +118,7 @@ fn separates_calls_inside_condition_from_then_arm() {
         call_input_names(&branch.condition_calls[0]),
         vec!["getActive"]
     );
-    assert_eq!(call_name(&branch.then_arm[0]), "delete");
+    assert_eq!(call_name(&branch_arm_body(branch, "then")[0]), "delete");
 }
 
 #[test]
@@ -327,7 +327,7 @@ fn preserves_nested_branch_inside_loop() {
         panic!("expected branch inside loop");
     };
     assert_eq!(call_name(&branch.condition_calls[0]), "allowed");
-    assert_eq!(call_name(&branch.then_arm[0]), "work");
+    assert_eq!(call_name(&branch_arm_body(branch, "then")[0]), "work");
 }
 
 #[test]
@@ -350,7 +350,7 @@ fn preserves_loop_inside_branch_arm() {
     let BodyElement::Branch(branch) = &method.body[0] else {
         panic!("expected branch");
     };
-    let BodyElement::Loop(loop_node) = &branch.then_arm[0] else {
+    let BodyElement::Loop(loop_node) = &branch_arm_body(branch, "then")[0] else {
         panic!("expected loop inside branch");
     };
     assert_eq!(loop_node.kind, LoopKind::While);
@@ -644,4 +644,19 @@ fn call(element: &BodyElement) -> &crate::model::CallSite {
 
 fn call_input_names(element: &BodyElement) -> Vec<&str> {
     call(element).inputs.iter().map(call_name).collect()
+}
+
+fn branch_arm<'a>(
+    branch: &'a crate::model::BranchSyntax,
+    label: &str,
+) -> &'a crate::model::BranchArmSyntax {
+    branch
+        .arms
+        .iter()
+        .find(|arm| arm.label == label)
+        .expect("branch arm exists")
+}
+
+fn branch_arm_body<'a>(branch: &'a crate::model::BranchSyntax, label: &str) -> &'a [BodyElement] {
+    &branch_arm(branch, label).body
 }

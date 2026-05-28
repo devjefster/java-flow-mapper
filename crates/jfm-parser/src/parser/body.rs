@@ -92,13 +92,13 @@ pub fn parse_if_statement(node: Node<'_>, source: &str) -> BranchSyntax {
 
     let mut arms = vec![BranchArmSyntax {
         label: "then".to_string(),
-        body: then_arm.clone(),
+        body: then_arm,
         terminates: then_terminates,
     }];
-    if let Some(else_arm) = &else_arm {
+    if let Some(else_arm) = else_arm {
         arms.push(BranchArmSyntax {
             label: "else".to_string(),
-            body: else_arm.clone(),
+            body: else_arm,
             terminates: else_terminates,
         });
     }
@@ -112,10 +112,6 @@ pub fn parse_if_statement(node: Node<'_>, source: &str) -> BranchSyntax {
             .map(|condition| collect_body_elements(condition, source))
             .unwrap_or_default(),
         arms,
-        then_arm,
-        else_arm,
-        then_terminates,
-        else_terminates,
     }
 }
 
@@ -132,10 +128,6 @@ pub fn parse_switch_statement(node: Node<'_>, source: &str) -> BranchSyntax {
             .map(|condition| collect_body_elements(condition, source))
             .unwrap_or_default(),
         arms: switch_arms(node, source),
-        then_arm: Vec::new(),
-        else_arm: None,
-        then_terminates: false,
-        else_terminates: false,
     }
 }
 
@@ -225,19 +217,15 @@ pub fn parse_ternary_expression(node: Node<'_>, source: &str) -> BranchSyntax {
         arms: vec![
             BranchArmSyntax {
                 label: "then".to_string(),
-                body: then_arm.clone(),
+                body: then_arm,
                 terminates: false,
             },
             BranchArmSyntax {
                 label: "else".to_string(),
-                body: else_arm.clone(),
+                body: else_arm,
                 terminates: false,
             },
         ],
-        then_arm,
-        else_arm: Some(else_arm),
-        then_terminates: false,
-        else_terminates: false,
     }
 }
 
@@ -266,12 +254,6 @@ pub fn parse_try_statement(node: Node<'_>, source: &str) -> BranchSyntax {
         condition_src: "try".to_string(),
         condition_calls: try_resource_calls(node, source),
         arms,
-        then_arm: body
-            .map(|body| collect_body_elements(body, source))
-            .unwrap_or_default(),
-        else_arm: None,
-        then_terminates: body.is_some_and(arm_terminates),
-        else_terminates: false,
     }
 }
 

@@ -12,6 +12,7 @@ mod utils;
 
 use std::fs;
 use std::path::Path;
+use std::time::Instant;
 use tree_sitter::Node;
 use walkdir::{DirEntry, WalkDir};
 
@@ -30,6 +31,7 @@ pub struct ParsedFile {
 
 /// Walk a Java project root and index supported `.java` files.
 pub fn index_project(root: &Path) -> Result<ProjectIndex> {
+    let started = Instant::now();
     let mut parser = tree_sitter::Parser::new();
     let language: tree_sitter::Language = tree_sitter_java::LANGUAGE.into();
     parser
@@ -37,6 +39,7 @@ pub fn index_project(root: &Path) -> Result<ProjectIndex> {
         .context("while loading tree-sitter-java language")?;
 
     let mut index = ProjectIndex::default();
+    let mut file_count = 0usize;
     for entry in WalkDir::new(root)
         .into_iter()
         .filter_entry(|entry| !is_skipped(entry))
@@ -53,6 +56,7 @@ pub fn index_project(root: &Path) -> Result<ProjectIndex> {
             .parse(&source, None)
             .with_context(|| format!("while parsing {}", entry.path().display()))?;
         let parsed = parse_file(entry.path(), &source, tree.root_node());
+        file_count += 1;
 
         for class in parsed.classes {
             index
@@ -67,8 +71,10 @@ pub fn index_project(root: &Path) -> Result<ProjectIndex> {
 
     debug!(
         root = %root.display(),
+        files = file_count,
         classes = index.classes.len(),
         endpoints = index.endpoints.len(),
+        elapsed_ms = started.elapsed().as_millis(),
         "indexed Java project"
     );
 
@@ -107,6 +113,6 @@ fn is_skipped(entry: &DirEntry) -> bool {
     };
     matches!(
         name,
-        "target" | "build" | "node_modules" | ".git" | ".idea" | ".mvn" | ".gradle"
+        "target" | "build" | "node_modules" | ".git" | ".idea" | ".jfm" | ".mvn" | ".gradle"
     )
 }

@@ -39,6 +39,8 @@ Run the main demo flow:
 cargo run -- flow demo-api/demo "GET /users/{id}"
 ```
 
+When the default cache exists at `<root>/.jfm/index`, `flow` reuses it instead of reparsing the project. Pass `--graph-dir <path>` to point `flow` at a different cache.
+
 The endpoint selector must be exactly two whitespace-separated parts:
 
 ```text

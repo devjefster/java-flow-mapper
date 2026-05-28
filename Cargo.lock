@@ -1892,6 +1892,7 @@ dependencies = [
  "jfm-render",
  "serde_json",
  "tempfile",
+ "tracing",
  "tracing-subscriber",
 ]
 
@@ -1916,6 +1917,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.18",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

@@ -6,14 +6,17 @@
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 
 use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand, ValueEnum};
+use tracing::debug;
 
 use jfm_flow as flow;
 use jfm_graph::SurrealGraphStore;
 use jfm_model::{
     BranchNode, CallNode, Confidence, Diagram, Endpoint, FlowNode, Format, HttpVerb, LoopNode,
+    ProjectIndex,
 };
 use jfm_parser as parser;
 use jfm_render as render;
@@ -77,6 +80,9 @@ enum Commands {
         /// Render-time depth limit for the call tree.
         #[arg(long)]
         max_depth: Option<usize>,
+        /// Directory for the embedded graph cache.
+        #[arg(long)]
+        graph_dir: Option<PathBuf>,
     },
 }
 
@@ -98,6 +104,7 @@ pub fn run() -> Result<()> {
 
     match args.command {
         Commands::Index { root, graph_dir } => {
+            let command_started = Instant::now();
             let root = root_or_current(root)?;
             let graph_dir = graph_dir.unwrap_or_else(|| default_graph_dir(&root));
             if let Some(parent) = graph_dir
@@ -108,13 +115,19 @@ pub fn run() -> Result<()> {
                     .with_context(|| format!("while creating {}", parent.display()))?;
             }
 
+            let parse_started = Instant::now();
             let index = parser::index_project(&root)
                 .with_context(|| format!("while parsing {}", root.display()))?;
+            log_cli_phase("index", "parse", parse_started);
+            let cache_open_started = Instant::now();
             let store = SurrealGraphStore::open(&graph_dir)
                 .with_context(|| format!("while opening graph cache {}", graph_dir.display()))?;
+            log_cli_phase("index", "cache_open", cache_open_started);
+            let cache_save_started = Instant::now();
             store
                 .save_project_index(&index)
                 .with_context(|| format!("while saving graph cache {}", graph_dir.display()))?;
+            log_cli_phase("index", "cache_save", cache_save_started);
 
             println!(
                 "Indexed {} classes, {} endpoints into {}",
@@ -122,6 +135,7 @@ pub fn run() -> Result<()> {
                 index.endpoints.len(),
                 graph_dir.display()
             );
+            log_cli_phase("index", "total", command_started);
             Ok(())
         }
         Commands::Entrypoints {
@@ -131,10 +145,14 @@ pub fn run() -> Result<()> {
             format,
             graph_dir,
         } => {
+            let command_started = Instant::now();
             let root = root_or_current(root)?;
             let graph_dir = graph_dir.unwrap_or_else(|| default_graph_dir(&root));
+            let cache_open_started = Instant::now();
             let store = SurrealGraphStore::open(&graph_dir)
                 .with_context(|| format!("while opening graph cache {}", graph_dir.display()))?;
+            log_cli_phase("entrypoints", "cache_open", cache_open_started);
+            let cache_load_started = Instant::now();
             let index = store.load_project_index()?.with_context(|| {
                 format!(
                     "no cached project index found at {}. Run `jfm index {}` first.",
@@ -142,7 +160,9 @@ pub fn run() -> Result<()> {
                     root.display()
                 )
             })?;
+            log_cli_phase("entrypoints", "cache_load", cache_load_started);
 
+            let filter_started = Instant::now();
             let mut endpoints: Vec<&Endpoint> = index
                 .endpoints
                 .iter()
@@ -162,13 +182,17 @@ pub fn run() -> Result<()> {
                     .then_with(|| left.file.cmp(&right.file))
                     .then_with(|| left.line.cmp(&right.line))
             });
+            log_cli_phase("entrypoints", "endpoint_selection", filter_started);
 
+            let render_started = Instant::now();
             match format {
                 EntryPointsFormat::Markdown => {
                     print!("{}", render_entrypoints_markdown(&endpoints))
                 }
                 EntryPointsFormat::Json => println!("{}", render_entrypoints_json(&endpoints)?),
             }
+            log_cli_phase("entrypoints", "render", render_started);
+            log_cli_phase("entrypoints", "total", command_started);
             Ok(())
         }
         Commands::Doctor {
@@ -176,10 +200,14 @@ pub fn run() -> Result<()> {
             format,
             graph_dir,
         } => {
+            let command_started = Instant::now();
             let root = root_or_current(root)?;
             let graph_dir = graph_dir.unwrap_or_else(|| default_graph_dir(&root));
+            let cache_open_started = Instant::now();
             let store = SurrealGraphStore::open(&graph_dir)
                 .with_context(|| format!("while opening graph cache {}", graph_dir.display()))?;
+            log_cli_phase("doctor", "cache_open", cache_open_started);
+            let cache_load_started = Instant::now();
             let index = store.load_project_index()?.with_context(|| {
                 format!(
                     "no cached project index found at {}. Run `jfm index {}` first.",
@@ -187,12 +215,18 @@ pub fn run() -> Result<()> {
                     root.display()
                 )
             })?;
+            log_cli_phase("doctor", "cache_load", cache_load_started);
+            let report_started = Instant::now();
             let report = build_doctor_report(&index);
+            log_cli_phase("doctor", "build_flow_report", report_started);
 
+            let render_started = Instant::now();
             match format {
                 DoctorFormat::Markdown => print!("{}", render_doctor_markdown(&report)),
                 DoctorFormat::Json => println!("{}", render_doctor_json(&report)?),
             }
+            log_cli_phase("doctor", "render", render_started);
+            log_cli_phase("doctor", "total", command_started);
             Ok(())
         }
         Commands::Flow {
@@ -200,13 +234,20 @@ pub fn run() -> Result<()> {
             format,
             diagram,
             max_depth,
+            graph_dir,
         } => {
+            let command_started = Instant::now();
             let (root, endpoint) = parse_flow_args(args)?;
             let (verb, path) = parse_endpoint(&endpoint)?;
-            let index = parser::index_project(&root)
-                .with_context(|| format!("while parsing {}", root.display()))?;
+            let graph_dir = graph_dir.unwrap_or_else(|| default_graph_dir(&root));
+            let index = project_index_for_flow(&root, &graph_dir)?;
+            let flow_started = Instant::now();
             let flow = flow::build_flow(&index, verb, &path)?;
+            log_cli_phase("flow", "build_flow", flow_started);
+            let render_started = Instant::now();
             print!("{}", render::render(&flow, format, diagram, max_depth));
+            log_cli_phase("flow", "render", render_started);
+            log_cli_phase("flow", "total", command_started);
             Ok(())
         }
     }
@@ -221,6 +262,51 @@ fn root_or_current(root: Option<PathBuf>) -> Result<PathBuf> {
         Some(root) => Ok(root),
         None => std::env::current_dir().context("while resolving current directory"),
     }
+}
+
+fn project_index_for_flow(root: &Path, graph_dir: &Path) -> Result<ProjectIndex> {
+    if graph_dir.exists() {
+        let cache_open_started = Instant::now();
+        let store = SurrealGraphStore::open(graph_dir)
+            .with_context(|| format!("while opening graph cache {}", graph_dir.display()))?;
+        log_cli_phase("flow", "cache_open", cache_open_started);
+
+        let cache_load_started = Instant::now();
+        if let Some(index) = store
+            .load_project_index()
+            .with_context(|| format!("while loading graph cache {}", graph_dir.display()))?
+        {
+            log_cli_phase("flow", "cache_load", cache_load_started);
+            debug!(
+                root = %root.display(),
+                graph_dir = %graph_dir.display(),
+                "using cached project index"
+            );
+            return Ok(index);
+        }
+        log_cli_phase("flow", "cache_load_miss", cache_load_started);
+    } else {
+        debug!(
+            root = %root.display(),
+            graph_dir = %graph_dir.display(),
+            "graph cache directory not found; parsing project"
+        );
+    }
+
+    let parse_started = Instant::now();
+    let index =
+        parser::index_project(root).with_context(|| format!("while parsing {}", root.display()))?;
+    log_cli_phase("flow", "parse", parse_started);
+    Ok(index)
+}
+
+fn log_cli_phase(command: &str, phase: &str, started: Instant) {
+    debug!(
+        command,
+        phase,
+        elapsed_ms = started.elapsed().as_millis(),
+        "cli phase completed"
+    );
 }
 
 fn parse_flow_args(args: Vec<String>) -> Result<(PathBuf, String)> {

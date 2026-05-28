@@ -266,10 +266,6 @@ pub struct BranchSyntax {
     pub condition_src: String,
     pub condition_calls: Vec<BodyElement>,
     pub arms: Vec<BranchArmSyntax>,
-    pub then_arm: Vec<BodyElement>,
-    pub else_arm: Option<Vec<BodyElement>>,
-    pub then_terminates: bool,
-    pub else_terminates: bool,
 }
 
 /// Parsed branch arm before call targets are resolved.

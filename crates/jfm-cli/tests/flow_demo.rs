@@ -268,6 +268,29 @@ fn flow_defaults_root_to_current_directory() {
 }
 
 #[test]
+fn flow_uses_cached_index_when_graph_dir_is_available() {
+    let graph_dir = index_demo_to_temp_graph();
+    let missing_root = graph_dir.path().join("missing-root");
+
+    let output = Command::cargo_bin("jfm")
+        .expect("binary exists")
+        .arg("flow")
+        .arg(&missing_root)
+        .arg("GET /users/{id}")
+        .arg("--graph-dir")
+        .arg(graph_dir.path())
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let stdout = String::from_utf8(output).expect("stdout is utf8");
+
+    assert!(stdout.contains("# GET /users/{id}"));
+    assert!(stdout.contains("UserController#findById(Long)"));
+}
+
+#[test]
 fn flow_get_users_by_id_renders_expected_markdown() {
     let stdout = run_flow("GET /users/{id}", &[]);
 
